@@ -12,6 +12,19 @@
 // do not spoil the global scope
 // The script can be transformed into a bookmarklet easily :)
 (function(window, undefined) {
+    // normalized window
+    var w;
+    if (typeof unsafeWindow != undefined) {
+        w = unsafeWindow
+    } else {
+        w = window;
+    }
+
+    // do not run in frames
+    if (w.self != w.top){
+        return;
+    }
+
     // via http://stackoverflow.com/a/3550261/1598057
     // a function that loads jQuery and calls a callback function when jQuery has finished loading
     // Note, jQ replaces $ to avoid conflicts.
@@ -35,11 +48,6 @@
         style.type = 'text/css';
         style.innerHTML = css;
         head.appendChild(style);
-    }
-
-    // do not run in frames
-    if (w.self != w.top){
-        return;
     }
 
     // the guts of this userscript
