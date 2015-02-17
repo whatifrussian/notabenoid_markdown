@@ -56,7 +56,7 @@
             var body = p.html();
             var re, tmpl;
 
-                // [labels] and [/labels]
+            // [labels] and [/labels]
             re = /(\[\/?labels\])/g;
             tmpl = '<span class="labels_block">$1</span>';
             body = body.replace(re, tmpl);
