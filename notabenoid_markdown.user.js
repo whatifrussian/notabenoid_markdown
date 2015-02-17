@@ -3,7 +3,7 @@
 // @description Markdown parser for notabenoid.org service
 // @author Alexander Turenko <totktonada.ru@gmail.com>
 // @license Public Domain
-// @version 1.0
+// @version 1.1
 // @include http://notabenoid.org/book/41531/*
 // ==/UserScript==
 
