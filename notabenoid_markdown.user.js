@@ -52,12 +52,11 @@
 
     // the guts of this userscript
     function main() {
-        jQ('p.text').each(function(){
-            var p = $(this);
-            var body = $(this).html();
+        function process(p) {
+            var body = p.html();
             var re, tmpl;
 
-            // [labels] and [/labels]
+                // [labels] and [/labels]
             re = /(\[\/?labels\])/g;
             tmpl = '<span class="labels_block">$1</span>';
             body = body.replace(re, tmpl);
@@ -101,15 +100,74 @@
                 body = body.replace(re, tmpl);
             }
 
-            p.replaceWith(jQ('<p/>', {class: 'text', html: body}));
+            p.after(jQ('<p/>', {class: 'text_rendered', html: body}));
+        }
+
+        jQ('p.text').each(function(){
+            var p = $(this);
+            process(p);
+        });
+
+        // via http://gabrieleromanato.name/jquery-detecting-new-elements-with-the-mutationobserver-object/
+        // and https://developer.mozilla.org/en-US/docs/Web/API/MutationObserver
+        var observer_o = new MutationObserver(function(mutations){
+            mutations.forEach(function(mutation){
+                if (mutation.addedNodes != null) {
+                    jQ(mutation.addedNodes).each(function(){
+                        var tagName = 'tagName' in $(this)[0] ?
+                                $(this)[0].tagName.toLowerCase() : null;
+                        console.log(tagName + ' | ' + $(this).hasClass('text'));
+                        if (tagName == 'p' && $(this).hasClass('text')) {
+                            var p = $(this);
+                            p.parent().children('p.text_rendered').remove();
+                            process(p);
+                        }
+                    });
+                }
+            });
+        });
+
+        var observer_t = new MutationObserver(function(mutations){
+            mutations.forEach(function(mutation){
+                if (mutation.addedNodes != null) {
+                    jQ(mutation.addedNodes).each(function(){
+                        var tagName = 'tagName' in $(this)[0] ?
+                                $(this)[0].tagName.toLowerCase() : null;
+                        if (tagName == 'div') {
+                            $(this).children('p.text').each(function(){
+                                var p = $(this);
+                                process(p);
+                            });
+                        }
+                    });
+                }
+            });
+        });
+
+        jQ('td.o div').each(function(){
+            observer_o.observe($(this)[0], {
+                childList: true
+            });
+        });
+        jQ('td.t').each(function(){
+            observer_t.observe($(this)[0], {
+                childList: true
+            });
         });
     }
 
     // additional url check.
     // Google Chrome do not treat @match as intended sometimes.
-    if (/http:\/\/notabenoid.org/.test(w.location.href)) {
+    if (/http:\/\/notabenoid.org\/book\/41531\//.test(w.location.href)) {
         // Below is the userscript code itself
         addGlobalStyle(
+            'p.text { display: none; }\n' +
+            '.text_rendered {\n' +
+                'padding: 6px 37px 0px 8px;\n' +
+                'margin: 0px 64px 0px 0px;\n' +
+                'line-height: 130%;\n' +
+                'word-wrap: break-word;\n' +
+            '}\n' +
             '.labels_block { color: #b8b8b8; }\n' +
             '.md_image_url { color: #b8b8b8; }\n' +
             '.md_link_url { color: #b8b8b8; }\n' +
