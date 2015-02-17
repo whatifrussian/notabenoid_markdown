@@ -75,7 +75,7 @@
             // embed image
             re = /\n?\r?userscript:\s+!\[\]\(([^\)]+)\)/g;
             body = body.replace(re, function(matched, p1, offset, src){
-                return '<span class="userscript_cmd">' + matched + '</span>\n' +
+                return '<span class="userscript_cmd">' + matched + '</span>' +
                     '<img src="' + p1.replace('http', '\0') + '"/>';
             });
 
