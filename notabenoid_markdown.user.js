@@ -9,10 +9,8 @@
 
 // via http://habrahabr.ru/post/129343/ and http://pastebin.com/9CXXYYBX
 // wrap the script in a closure (opera, ie)
-// do not spoil the global scope
-// The script can be transformed into a bookmarklet easily :)
 (function(window, undefined) {
-    // normalized window
+    // normalize window
     var w;
     if (typeof unsafeWindow != undefined) {
         w = unsafeWindow
@@ -27,7 +25,7 @@
 
     // via http://stackoverflow.com/a/3550261/1598057
     // a function that loads jQuery and calls a callback function when jQuery has finished loading
-    // Note, jQ replaces $ to avoid conflicts.
+    // Note: jQ replaces $ to avoid conflicts.
     function addJQuery(callback) {
         var script = document.createElement("script");
         script.setAttribute("src", "//ajax.googleapis.com/ajax/libs/jquery/2.1.0/jquery.min.js");
@@ -50,6 +48,7 @@
         head.appendChild(style);
     }
 
+    // This function will injected to page source.
     function main() {
         // via http://stackoverflow.com/a/7356528/1598057
         function isFunction(v) {
@@ -57,12 +56,18 @@
             return v && getType.toString.call(v) === '[object Function]';
         }
 
-        // replaced all values simultanously, so str_format('$1 $2', [1: '$2', '$1'])
-        // must return '$2 $1'.
+        // Replace '$0', '$1', '$2', ..., '$99' placeholders in string with some string values.
+        // Note: Replaced all placeholders 'simultanously', so
+        // str_format('$1 $2', [1: '$2', '$1']) must return '$2 $1'.
         function str_format(tmpl, values) {
             return tmpl.replace(/\$([0-9]{1,2})/g, function(_, num, _, _){
                 return values[num];
             });
+        }
+
+        // Return tag name for jQuery node or null.
+        function jQTagName(jQNode) {
+            return 'tagName' in jQNode[0] ? jQNode[0].tagName.toLowerCase() : null;
         }
 
         // s -- substitution
@@ -329,53 +334,69 @@
         // and https://developer.mozilla.org/en-US/docs/Web/API/MutationObserver
         var observer_o = new MutationObserver(function(mutations){
             mutations.forEach(function(mutation){
-                if (mutation.addedNodes != null) {
-                    jQ(mutation.addedNodes).each(function(){
-                        var tagName = 'tagName' in $(this)[0] ?
-                                $(this)[0].tagName.toLowerCase() : null;
-                        if (tagName == 'p' && $(this).hasClass('text')) {
-                            var p = $(this);
-                            p.parent().children('p.text_rendered').remove();
-                            process(p);
-                        }
-                    });
-                }
+                if (mutation.addedNodes == null)
+                    return;
+
+                jQ(mutation.addedNodes).each(function(){
+                    if (jQTagName($(this)) == 'p' && $(this).hasClass('text')) {
+                        var p = $(this);
+                        p.parent().children('p.text_rendered').remove();
+                        process(p);
+                    }
+                });
             });
         });
 
         var observer_t = new MutationObserver(function(mutations){
             mutations.forEach(function(mutation){
-                if (mutation.addedNodes != null) {
-                    jQ(mutation.addedNodes).each(function(){
-                        var tagName = 'tagName' in $(this)[0] ?
-                                $(this)[0].tagName.toLowerCase() : null;
-                        if (tagName == 'div') {
-                            $(this).children('p.text').each(function(){
-                                var p = $(this);
-                                process(p);
-                            });
-                        }
-                    });
-                }
+                if (mutation.addedNodes == null)
+                    return;
+
+                jQ(mutation.addedNodes).each(function(){
+                    if (jQTagName($(this)) == 'div') {
+                        $(this).children('p.text').each(function(){
+                            var p = $(this);
+                            process(p);
+                        });
+                    }
+                });
             });
         });
 
-        jQ('td.o div').each(function(){
-            observer_o.observe($(this)[0], {
-                childList: true
+        var observer_new = new MutationObserver(function(mutations){
+            mutations.forEach(function(mutation){
+                if (mutation.addedNodes == null)
+                    return;
+
+                jQ(mutation.addedNodes).each(function(){
+                    var node = $(this);
+
+                    if (jQTagName(node) == 'tr') {
+                        // No guarantee that these nodes exists at this time,
+                        // but it works for me...
+                        var td_o_div = node.children('td.o').children('div');
+                        var td_t = node.children('td.t');
+                        observer_o.observe(td_o_div[0], {childList: true});
+                        observer_t.observe(td_t[0], {childList: true});
+                    }
+                });
             });
+        });
+
+        // observe exists nodes
+        jQ('td.o div').each(function(){
+            observer_o.observe($(this)[0], {childList: true});
         });
         jQ('td.t').each(function(){
-            observer_t.observe($(this)[0], {
-                childList: true
-            });
+            observer_t.observe($(this)[0], {childList: true});
         });
+
+        // register new nodes
+        observer_new.observe(jQ('table#Tr > tbody')[0], {childList: true});
     }
 
-    // additional url check.
-    // Google Chrome do not treat @match as intended sometimes.
+    // Additional url check: Chrome do not treat @match as intended sometimes.
     if (/http:\/\/notabenoid.org\/book\/41531\//.test(w.location.href)) {
-        // Below is the userscript code itself
         addGlobalStyle(
             'p.text { display: none; }\n' +
             '.text_rendered {\n' +
