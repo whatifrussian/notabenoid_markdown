@@ -3,7 +3,7 @@
 // @description Markdown parser for notabenoid.org service
 // @author Alexander Turenko <totktonada.ru@gmail.com>
 // @license Public Domain
-// @version 1.2
+// @version 1.3
 // @include http://notabenoid.org/book/41531/*
 // ==/UserScript==
 
@@ -162,9 +162,9 @@
             // via http://stackoverflow.com/a/3809435/1598057
             var letters_re = 'а-яА-Яa-zA-Z';
             var proto_re = '(?:https?:|ftp:)?\\/\\/';
-            var tld_re = '[' + letters_re + ']{2,6}';
             var domains_re = '[-' + letters_re + '0-9@:%._\\+~#=]{1,256}';
-            var page_re    = '[-' + letters_re + '0-9@:%._\\+~#=/?&;]*';
+            var tld_re = '[' + letters_re + ']{2,6}';
+            var page_re = '(?:[-' + letters_re + '0-9@:%._\\+~#=/?&;,]|\\([^)]*\\))*';
             var url_re = proto_re + domains_re + '\\.' + tld_re + '\\b' + page_re;
 
             var Where = Object.freeze({
