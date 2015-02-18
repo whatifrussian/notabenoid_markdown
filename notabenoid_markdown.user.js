@@ -50,55 +50,282 @@
         head.appendChild(style);
     }
 
-    // the guts of this userscript
     function main() {
-        function process(p) {
-            var body = p.html();
-            var re, tmpl;
+        // via http://stackoverflow.com/a/7356528/1598057
+        function isFunction(v) {
+            var getType = {};
+            return v && getType.toString.call(v) === '[object Function]';
+        }
 
-            // [labels] and [/labels]
-            re = /(\[\/?labels\])/g;
-            tmpl = '<span class="labels_block">$1</span>';
-            body = body.replace(re, tmpl);
+        // replaced all values simultanously, so str_format('$1 $2', [1: '$2', '$1'])
+        // must return '$2 $1'.
+        function str_format(tmpl, values) {
+            return tmpl.replace(/\$([0-9]{1,2})/g, function(_, num, _, _){
+                return values[num];
+            });
+        }
 
-            // md image
-            re = /!\[\]\((\S+)(\s+)(".*")\)/g;
-            tmpl = '![](<span class="md_image_url">$1</span>$2$3)';
-            body = body.replace(re, tmpl);
+        // s -- substitution
+        function parse_by(chunks, s) {
+            var out = [];
 
-            // md link
-            re = /\[([^\]]*)\]\((\S+)(\s+)("[^"]*")\)/g;
-            tmpl = '[$1]($2$3<span class="md_link_title">$4</span>)';
-            body = body.replace(re, tmpl);
+            chunks.forEach(function(chunk){
+                if (s.applicable_to.indexOf(chunk.type) < 0) {
+                    out.push(chunk);
+                    return;
+                }
 
-            // embed image
-            re = /\n?\r?userscript:\s+!\[\]\(([^\)]+)\)/g;
-            body = body.replace(re, function(matched, p1, offset, src){
-                return '<span class="userscript_cmd">' + matched + '</span>' +
-                    '<img src="' + p1.replace('http', '\0') + '"/>';
+                var idx = 0;
+                var start = 0;
+                var end = 0;
+                var matches;
+
+                while ((matches = s.re.exec(chunk.value.substring(idx))) != null) {
+                    start = idx + matches.index;
+                    end = idx + matches.index + matches[0].length - 1;
+
+                    // add text before matched chunks, if exists
+                    if (start - idx > 0) {
+                        var text_before = chunk.value.substring(idx, start);
+                        out.push({type: chunk.type, value: text_before});
+                    }
+
+                    // add matched chunk
+                    s.tmpl.forEach(function(t){
+                        var str;
+                        if (isFunction(t.value))
+                            str = t.value(matches);
+                        else
+                            str = str_format(t.value, matches);
+                        out.push({type: t.result_type, value: str});
+                    });
+
+                    idx = end + 1;
+                }
+
+                // add text after all matched chunks, if exists
+                if (chunk.value.length - idx > 0) {
+                    var text_after = chunk.value.substring(idx);
+                    out.push({type: chunk.type, value: text_after});
+                }
             });
 
-            // special sequences
-            re = /&amp;(nbsp|thinsp);/g;
-            tmpl = '<span class="special_seq">&amp;$1;</span>';
-            body = body.replace(re, tmpl);
+            return out;
+        }
 
+        function process(p) {
             // via http://stackoverflow.com/a/3809435/1598057
-            re = /(https?:\/\/(www\.)?[-а-яА-Яa-zA-Z0-9@:%._\+~#=]{2,256}\.[a-z]{2,6}\b([-а-яА-Яa-zA-Z0-9@:%_\+.~#?&//=;]*))/g;
-            tmpl = '<a href="$1" class="any_link_url">$1</a>';
-            body = body.replace(re, tmpl);
+            var letters_re = 'а-яА-Яa-zA-Z';
+            var proto_re = '(?:https?:|ftp:)?\\/\\/';
+            var tld_re = '[' + letters_re + ']{2,6}';
+            var domains_re = '[-' + letters_re + '0-9@:%._\\+~#=]{1,256}';
+            var page_re    = '[-' + letters_re + '0-9@:%._\\+~#=/?&;]*';
+            var url_re = proto_re + domains_re + '\\.' + tld_re + '\\b' + page_re;
 
-            // embed image
-            re = /\0/g;
-            tmpl = 'http';
-            body = body.replace(re, tmpl);
+            var Where = Object.freeze({
+                ORIG: 1,
+                TRAN: 2,
+                BOTH: 3
+            });
 
-            // mistakes
-            if (p.parent().parent().attr('class') == 't') {
-                re = /(\.\[\^[0-9]+\]|\.\.\.|\S - \S)/g;
-                tmpl = '<span class="mistake">$1</span>';
-                body = body.replace(re, tmpl);
-            }
+            var Desc = Object.freeze({
+                FOOTNOTE_PUNCTUM: "Положение знака сноски относительно знака препинания",
+                FOOTNOTE_POINT: "Знак сноски после точки (допустимо после сокращения)",
+                DOTS: "Многоточие не одним знаком, а тремя точками",
+                NOT_EM_DASH: "Дефис или среднее тире вместо длинного тире",
+                NOT_EN_DASH: "Дефис или длинное тире вместо среднего тире (допустимо в формуле)",
+                SPACE_PERCENT: "Пробельный символ перед знаком процента",
+                QUOTES: "«Компьютерные» кавычки вместо русских «елочек» или английских «лапок»",
+                APOSTROPHE: "«Компьютерный» апостроф вместо одиночной закрывающей кавычки-«лапки»",
+                ABBR_SPACE: "Отсутствует пробел после сокращения (правильно: «т. е.», «и т. д.»)"
+            });
+
+            var ChunkType = Object.freeze({
+                PLAIN_TEXT:      1,
+                CAN_CONTAIN_URL: 2,
+                OTHER:           3
+            });
+
+            substitutions = [{
+                // quote with '>' (for example article question)
+                re: /^&gt;.*$/m,
+                tmpl: [{
+                    value: '<span class="quote_block">$0</span>',
+                    result_type: ChunkType.CAN_CONTAIN_URL
+                }],
+                where: Where.BOTH,
+                applicable_to: [ChunkType.PLAIN_TEXT]
+            }, {
+                // [labels] and [/labels]
+                re: /\[\/?labels\]/,
+                tmpl: [{
+                    value: '<span class="labels_block">$0</span>',
+                    result_type: ChunkType.OTHER
+                }],
+                where: Where.BOTH,
+                applicable_to: [ChunkType.PLAIN_TEXT]
+            }, {
+                // md image: ![](url "title")
+                re: /!\[\]\((\S+)(\s+)(".*")\)/,
+                tmpl: [{
+                    value: '![](<span class="md_image_url">$1</span>$2',
+                    result_type: ChunkType.CAN_CONTAIN_URL
+                }, {
+                    value: '<span class="md_image_title">$3</span>)',
+                    result_type: ChunkType.OTHER
+                }],
+                where: Where.BOTH,
+                applicable_to: [ChunkType.PLAIN_TEXT]
+            }, {
+                // md link: [text](url "title")
+                re: /\[([^\]]*)\]\((\S+)(\s+)("[^"]*")\)/,
+                tmpl: [{
+                    value: '[$1](',
+                    result_type: ChunkType.PLAIN_TEXT
+                }, {
+                    value: '$2',
+                    result_type: ChunkType.CAN_CONTAIN_URL
+                }, {
+                    value: '$3<span class="md_link_title">$4</span>)',
+                    result_type: ChunkType.OTHER
+                }],
+                where: Where.BOTH,
+                applicable_to: [ChunkType.PLAIN_TEXT]
+            }, {
+                // embed image: userscript: ![](url)
+                re: /^userscript:\s+!\[\]\(([^\)]+)\)/m,
+                tmpl: [{
+                    value: '<span class="userscript_cmd">$0</span>',
+                    result_type: ChunkType.CAN_CONTAIN_URL
+                }, {
+                    value: '<img src="$1"/>',
+                    result_type: ChunkType.OTHER
+                }],
+                where: Where.BOTH,
+                applicable_to: [ChunkType.PLAIN_TEXT]
+            }, {
+                // mistake: 20 % → 20%
+                re: /\d(?: |&amp;thinsp;|&amp;nbsp;)%/,
+                tmpl: [{
+                    value: '<span class="mistake" title="' + Desc.SPACE_PERCENT + '">$0</span>',
+                    result_type: ChunkType.OTHER
+                }],
+                where: Where.TRAN,
+                applicable_to: [ChunkType.PLAIN_TEXT]
+            }, {
+                // special sequences: '&nbsp;' and '&thinsp;'
+                re: /&amp;(nbsp|thinsp);/,
+                tmpl: [{
+                    value: '<span class="special_seq">&amp;$1;</span>',
+                    result_type: ChunkType.OTHER
+                }],
+                where: Where.BOTH,
+                applicable_to: [ChunkType.PLAIN_TEXT]
+            }, {
+                // urls
+                re: new RegExp(url_re),
+                tmpl: [{
+                    value: function(matches){
+                        var url = matches[0].replace('&amp;', '&');
+                        var url_d = matches[0];
+                        return '<a href="' + url + '" class="any_link_url">' + url_d + '</a>';
+                    },
+                    result_type: ChunkType.OTHER
+                }],
+                where: Where.BOTH,
+                applicable_to: [ChunkType.PLAIN_TEXT, ChunkType.CAN_CONTAIN_URL]
+            }, {
+                // mistake: 'text,[^1]' or 'text[^1]?'
+                re: /[,;:— ]\[\^[0-9]+\]|\[\^[0-9]+\][?!…]/,
+                tmpl: [{
+                    value: '<span class="mistake" title="' + Desc.FOOTNOTE_PUNCTUM + '">$0</span>',
+                    result_type: ChunkType.OTHER
+                }],
+                where: Where.TRAN,
+                applicable_to: [ChunkType.PLAIN_TEXT]
+            }, {
+                // possible mistake: 'text.[^1]'
+                re: /\.\[\^[0-9]+\]/,
+                tmpl: [{
+                    value: '<span class="possible_mistake" title="' + Desc.FOOTNOTE_POINT + '">$0</span>',
+                    result_type: ChunkType.OTHER
+                }],
+                where: Where.TRAN,
+                applicable_to: [ChunkType.PLAIN_TEXT]
+            }, {
+                // mistake: ... → …
+                re: /\.{3}/,
+                tmpl: [{
+                    value: '<span class="mistake" title="' + Desc.DOTS + '">$0</span>',
+                    result_type: ChunkType.OTHER
+                }],
+                where: Where.TRAN,
+                applicable_to: [ChunkType.PLAIN_TEXT]
+            }, {
+                // mistake: {hyphen, en dash} → em dash
+                re: /\S [-–] \S|^[-–] \S/,
+                tmpl: [{
+                    value: '<span class="mistake" title="' + Desc.NOT_EM_DASH + '">$0</span>',
+                    result_type: ChunkType.OTHER
+                }],
+                where: Where.TRAN,
+                applicable_to: [ChunkType.PLAIN_TEXT]
+            }, {
+                // possible mistake: {hyphen, em dash} → en dash
+                re: /\d[-—]\d/,
+                tmpl: [{
+                    value: '<span class="possible_mistake" title="' + Desc.NOT_EN_DASH + '">$0</span>',
+                    result_type: ChunkType.OTHER
+                }],
+                where: Where.TRAN,
+                applicable_to: [ChunkType.PLAIN_TEXT]
+            }, {
+                // mistake: computer style quotes
+                re: /'[^']'|"[^"]"/,
+                tmpl: [{
+                    value: '<span class="mistake" title="' + Desc.QUOTES + '">$0</span>',
+                    result_type: ChunkType.OTHER
+                }],
+                where: Where.TRAN,
+                applicable_to: [ChunkType.PLAIN_TEXT]
+            }, {
+                // mistake: computer style apostrophe
+                re: /'/,
+                tmpl: [{
+                    value: '<span class="mistake" title="' + Desc.APOSTROPHE + '">$0</span>',
+                    result_type: ChunkType.OTHER
+                }],
+                where: Where.TRAN,
+                applicable_to: [ChunkType.PLAIN_TEXT]
+            }, {
+                // mistake: no space after abbreviation word
+                re: new RegExp('[' + letters_re + ']\\.[' + letters_re + ']'),
+                tmpl: [{
+                    value: '<span class="mistake" title="' + Desc.ABBR_SPACE + '">$0</span>',
+                    result_type: ChunkType.OTHER
+                }],
+                where: Where.TRAN,
+                applicable_to: [ChunkType.PLAIN_TEXT]
+            }];
+
+            var chunks = [{
+                type: ChunkType.PLAIN_TEXT,
+                value: p.html()
+            }];
+
+            var td_class = p.parent().parent().attr('class');
+            substitutions.forEach(function(s){
+                var ok = (s.where == Where.BOTH) ||
+                    (s.where == Where.ORIG && td_class == 'o') ||
+                    (s.where == Where.TRAN && td_class == 't');
+                if (ok)
+                    chunks = parse_by(chunks, s);
+            });
+            
+            body = "";
+            chunks.forEach(function(chunk){
+                body += chunk.value;
+            });
 
             p.after(jQ('<p/>', {class: 'text_rendered', html: body}));
         }
@@ -116,7 +343,6 @@
                     jQ(mutation.addedNodes).each(function(){
                         var tagName = 'tagName' in $(this)[0] ?
                                 $(this)[0].tagName.toLowerCase() : null;
-                        console.log(tagName + ' | ' + $(this).hasClass('text'));
                         if (tagName == 'p' && $(this).hasClass('text')) {
                             var p = $(this);
                             p.parent().children('p.text_rendered').remove();
@@ -168,14 +394,17 @@
                 'line-height: 130%;\n' +
                 'word-wrap: break-word;\n' +
             '}\n' +
+            '.quote_block { color: #306a30; }\n' +
             '.labels_block { color: #b8b8b8; }\n' +
             '.md_image_url { color: #b8b8b8; }\n' +
+            '.md_image_title { color: #50a850; }\n' +
             '.md_link_url { color: #b8b8b8; }\n' +
             '.md_link_title { color: #50a850; }\n' +
             '.special_seq { color: #b8b8b8; }\n' +
             '.any_link_url { color: #b8b8b8; }\n' +
             '.userscript_cmd { display: none; }\n' +
-            '.mistake { color: #ff0000; border: 1px solid #ff0000; }\n'
+            '.mistake { color: #ff0000; border: 1px solid #ff0000; }\n' +
+            '.possible_mistake { color: #900000; border: 1px dotted #900000; }\n'
         );
         addJQuery(main);
     }
