@@ -130,7 +130,6 @@
 
             var Desc = Object.freeze({
                 FOOTNOTE_PUNCTUM: "Положение знака сноски относительно знака препинания",
-                FOOTNOTE_POINT: "Знак сноски после точки (допустимо после сокращения)",
                 DOTS: "Многоточие не одним знаком, а тремя точками",
                 NOT_EM_DASH: "Дефис или среднее тире вместо длинного тире",
                 NOT_EN_DASH: "Дефис или длинное тире вместо среднего тире (допустимо в формуле)",
@@ -235,19 +234,10 @@
                 where: Where.BOTH,
                 applicable_to: [ChunkType.PLAIN_TEXT, ChunkType.CAN_CONTAIN_URL]
             }, {
-                // mistake: 'text,[^1]' or 'text[^1]?'
-                re: /[,;:— ]\[\^[0-9]+\]|\[\^[0-9]+\][?!…]/,
+                // mistake: 'text.[^1]' or 'text[^1]?'
+                re: /[.,;:— ]\[\^[0-9]+\]|\[\^[0-9]+\][?!…]/,
                 tmpl: [{
                     value: '<span class="mistake" title="' + Desc.FOOTNOTE_PUNCTUM + '">$0</span>',
-                    result_type: ChunkType.OTHER
-                }],
-                where: Where.TRAN,
-                applicable_to: [ChunkType.PLAIN_TEXT]
-            }, {
-                // possible mistake: 'text.[^1]'
-                re: /\.\[\^[0-9]+\]/,
-                tmpl: [{
-                    value: '<span class="possible_mistake" title="' + Desc.FOOTNOTE_POINT + '">$0</span>',
                     result_type: ChunkType.OTHER
                 }],
                 where: Where.TRAN,
@@ -271,10 +261,10 @@
                 where: Where.TRAN,
                 applicable_to: [ChunkType.PLAIN_TEXT]
             }, {
-                // possible mistake: {hyphen, em dash} → en dash
+                // mistake: {hyphen, em dash} → en dash
                 re: /\d[-—]\d/,
                 tmpl: [{
-                    value: '<span class="possible_mistake" title="' + Desc.NOT_EN_DASH + '">$0</span>',
+                    value: '<span class="mistake" title="' + Desc.NOT_EN_DASH + '">$0</span>',
                     result_type: ChunkType.OTHER
                 }],
                 where: Where.TRAN,
@@ -394,17 +384,16 @@
                 'line-height: 130%;\n' +
                 'word-wrap: break-word;\n' +
             '}\n' +
-            '.quote_block { color: #306a30; }\n' +
+            '.quote_block { color: #306030; }\n' +
             '.labels_block { color: #b8b8b8; }\n' +
             '.md_image_url { color: #b8b8b8; }\n' +
-            '.md_image_title { color: #50a850; }\n' +
+            '.md_image_title { color: #306030; }\n' +
             '.md_link_url { color: #b8b8b8; }\n' +
-            '.md_link_title { color: #50a850; }\n' +
+            '.md_link_title { color: #306030; }\n' +
             '.special_seq { color: #b8b8b8; }\n' +
             '.any_link_url { color: #b8b8b8; }\n' +
             '.userscript_cmd { display: none; }\n' +
-            '.mistake { color: #ff0000; border: 1px solid #ff0000; }\n' +
-            '.possible_mistake { color: #900000; border: 1px dotted #900000; }\n'
+            '.mistake { border-bottom: 1px dotted #ff0000; }\n'
         );
         addJQuery(main);
     }
