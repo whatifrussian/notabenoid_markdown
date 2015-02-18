@@ -3,9 +3,17 @@
 // @description Markdown parser for notabenoid.org service
 // @author Alexander Turenko <totktonada.ru@gmail.com>
 // @license Public Domain
-// @version 1.1
+// @version 1.2
 // @include http://notabenoid.org/book/41531/*
 // ==/UserScript==
+
+// ## TODO’s residence
+// 1. Maybe get rid from jQuery; that used a little.
+// 2. Maybe get data as 'p.text()' (not 'p.html()') and put it via 'text'.
+//    But then we need to extra work with text chunks and new html objects.
+//    That more clean way, but also more difficult.
+// 3. Load MathJax only when it really needs. Add to MathJax queue only nodes,
+//    which contains formulas.
 
 // via http://habrahabr.ru/post/129343/ and http://pastebin.com/9CXXYYBX
 // wrap the script in a closure (opera, ie)
@@ -46,6 +54,38 @@
         style.type = 'text/css';
         style.innerHTML = css;
         head.appendChild(style);
+    }
+
+    // via https://github.com/whatifrussian/website/blob/master/themes/whatif/templates/includes/mathjax.html
+    // with added 'ignoreClass'
+    function addMathJax() {
+        var head = document.getElementsByTagName('head')[0];
+        if (!head) { return; }
+
+        var config = document.createElement("script");
+        config.setAttribute("type", "text/x-mathjax-config");
+        config.textContent =
+            'MathJax.Hub.Config({\n' +
+            '    extensions: ["tex2jax.js"],\n' +
+            '    messageStyle: "none",\n' +
+            '    jax: ["input/TeX", "output/SVG"],\n' +
+            '    tex2jax: {\n' +
+            '        inlineMath: [ [\'$\',\'$\'] ],\n' +
+            '        displayMath: [ [\'$$\',\'$$\'] ],\n' +
+            '        processEscapes: true,\n' +
+            '        ignoreClass: [\'text\']\n' +
+            '    },\n' +
+            '    TeX: {\n' +
+            '      extensions: ["AMSmath.js", "AMSsymbols.js"]\n' +
+            '    },\n' +
+            '    "SVG": { availableFonts: ["TeX"],  linebreaks: { automatic: true } }\n' +
+            '});\n'
+        head.appendChild(config);
+
+        var script = document.createElement("script");
+        script.setAttribute("type", "text/javascript");
+        script.setAttribute("src", "//cdn.mathjax.org/mathjax/latest/MathJax.js");
+        head.appendChild(script);
     }
 
     // This function will injected to page source.
@@ -151,6 +191,16 @@
             });
 
             substitutions = [{
+                // formulas
+                re: /(?:^|[^\\])\${1,2}.+(?:[^\\])\${1,2}/,
+                tmpl: [{
+                    value: '$0',
+                    result_type: ChunkType.OTHER
+                }],
+                where: Where.BOTH,
+                applicable_to: [ChunkType.PLAIN_TEXT]
+            }, {
+
                 // quote with '>' (for example article question)
                 re: /^&gt;.*$/m,
                 tmpl: [{
@@ -316,13 +366,20 @@
                 if (ok)
                     chunks = parse_by(chunks, s);
             });
-            
+
             body = "";
             chunks.forEach(function(chunk){
                 body += chunk.value;
             });
 
-            p.after(jQ('<p/>', {class: 'text_rendered', html: body}));
+            p_rendered = jQ('<p/>', {class: 'text_rendered', html: body});
+            p.after(p_rendered);
+
+            // Process with MathJax if it already loaded.
+            // If not, then it will processed when MathJax loaded.
+            if (typeof MathJax != 'undefined') {
+                MathJax.Hub.Queue(["Typeset", MathJax.Hub, p_rendered[0]]);
+            }
         }
 
         jQ('p.text').each(function(){
@@ -397,6 +454,7 @@
 
     // Additional url check: Chrome do not treat @match as intended sometimes.
     if (/http:\/\/notabenoid.org\/book\/41531\//.test(w.location.href)) {
+        addMathJax();
         addGlobalStyle(
             'p.text { display: none; }\n' +
             '.text_rendered {\n' +
