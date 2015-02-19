@@ -246,10 +246,10 @@
                 where: Where.BOTH,
                 applicable_to: [ChunkType.PLAIN_TEXT]
             }, {
-                // embed image: userscript: ![](url)
-                re: /^userscript:\s+!\[\]\(([^\)]+)\)/m,
+                // embed image: render: ![](url)
+                re: /^render:\s+!\[\]\(([^\)]+)\)/m,
                 tmpl: [{
-                    value: '<span class="userscript_cmd">$0</span>',
+                    value: '<span class="rendered_md_src">$0</span>',
                     result_type: ChunkType.CAN_CONTAIN_URL
                 }, {
                     value: '<img src="$1"/>',
@@ -471,7 +471,7 @@
             '.md_link_title { color: #306030; }\n' +
             '.special_seq { color: #b8b8b8; }\n' +
             '.any_link_url { color: #b8b8b8; }\n' +
-            '.userscript_cmd { display: none; }\n' +
+            '.rendered_md_src { display: none; }\n' +
             '.mistake { border-bottom: 1px dotted #ff0000; }\n'
         );
         addJQuery(main);
