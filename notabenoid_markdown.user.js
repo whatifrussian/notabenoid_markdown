@@ -199,7 +199,7 @@
                 DOTS: "Многоточие не одним знаком, а тремя точками",
                 NOT_EM_DASH: "Дефис или среднее тире вместо длинного тире",
                 NOT_EN_DASH: "Дефис или длинное тире вместо среднего тире (допустимо в формуле)",
-                SPACE_PERCENT: "Пробельный символ перед знаком процента",
+                SPACE_PERCENT: "Пробел перед знаком процента",
                 QUOTES: "«Компьютерные» кавычки вместо русских «елочек» или английских «лапок»",
                 APOSTROPHE: "«Компьютерный» апостроф вместо одиночной закрывающей кавычки-«лапки»",
                 ABBR_SPACE: "Отсутствует пробел после сокращения (правильно: «т. е.», «и т. д.»)"
@@ -234,7 +234,7 @@
                 applicable_to: [ChunkType.PLAIN_TEXT, ChunkType.LABELS_BLOCK]
             }, {
                 // footnote fragment
-                re: /^(\[\^[0-9]{1,2}\]:)(.*)$/,
+                re: /^(\[\^[0-9]{1,2}\]:)((?:.|\n|\r)*)$/,
                 tmpl: [{
                     value: '<span class="footnote_anchor">$1</span>',
                     result_type: ChunkType.OTHER
@@ -287,10 +287,8 @@
                 // md image: ![](url "title")
                 re: /!\[\]\((\S+)(\s+)(".*")\)/,
                 tmpl: [{
-                    value: '![](<span class="md_image_url">$1</span>$2',
-                    result_type: ChunkType.CAN_CONTAIN_URL
-                }, {
-                    value: '<span class="md_image_title">$3</span>)',
+                    value: '![]<span class="md_image_url">($1$2' +
+                        '<span class="md_image_title">$3</span>)</span>',
                     result_type: ChunkType.OTHER
                 }],
                 where: Where.BOTH,
