@@ -605,12 +605,42 @@
     if (/http:\/\/notabenoid.org\/book\/41531\//.test(w.location.href)) {
         addMathJax();
         addGlobalStyle(
+            // hide .text and make .text_rendered looks like
             'p.text { display: none; }\n' +
             '.text_rendered {\n' +
-                'padding: 6px 37px 0px 8px;\n' +
-                'margin: 0px 64px 0px 0px;\n' +
+                'padding: 6px 8px 0px;\n' +
+                'margin: 0px;\n' +
                 'line-height: 130%;\n' +
                 'word-wrap: break-word;\n' +
+            '}\n' +
+            'td.o .text_rendered {\n' +
+                'margin-right: 110px;\n' +
+            '}\n' +
+            '.translator-oe-hide td.o .text_rendered {\n' +
+                'margin-right: 14px;\n' +
+            '}\n' +
+            'td.t .text_rendered {\n' +
+                'margin-right: 64px;\n' +
+                'padding-right: 37px;\n' +
+            '}\n' +
+            // our styles below
+            '#Tr td .text_rendered.footnote_body {\n' +
+                'background-color: #faffee;\n' +
+                'box-shadow: 0px 0px 1px 1px rgba(150, 200, 0, 0.7);\n' +
+                '-moz-box-shadow: 0px 0px 1px 1px rgba(150, 200, 0, 0.7);\n' +
+                '-webkit-box-shadow: 0px 0px 1px 1px rgba(150, 200, 0, 0.7);\n' +
+                'margin: 10px;\n' +
+                'padding: 4px;\n' +
+            '}\n' +
+            '#Tr td.o .text_rendered.footnote_body {\n' +
+                'margin-right: 112px;\n' +
+            '}\n' +
+            '#Tr.translator-oe-hide td.o .text_rendered.footnote_body {\n' +
+                'margin-right: 16px;\n' +
+            '}\n' +
+            '#Tr td.t .text_rendered.footnote_body {\n' +
+                'margin-right: 66px;\n' +
+                'padding-right: 29px;\n' +
             '}\n' +
             '.formula_source { color: #b8b8b8; }\n' +
             '.inline_formula_source { font-size: 0; }\n' +
@@ -641,14 +671,6 @@
             '.special_seq    { color: #b8b8b8; }\n' +
             '.any_link_url   { color: #b8b8b8; }\n' +
             '.rendered_md_src { display: none; }\n' +
-            '.text_rendered.footnote_body {\n' +
-                'background-color: #faffee;\n' +
-                'box-shadow: 0px 0px 1px 1px rgba(150, 200, 0, 0.7);\n' +
-                '-moz-box-shadow: 0px 0px 1px 1px rgba(150, 200, 0, 0.7);\n' +
-                '-webkit-box-shadow: 0px 0px 1px 1px rgba(150, 200, 0, 0.7);\n' +
-                'margin: 10px 71px 10px 10px;\n' +
-                'padding: 4px 24px 4px 4px;\n' +
-            '}\n' +
             '.footnote_anchor { color: #53830d; }\n' +
             '.footnote_ref {\n' +
                 'color: #53830d;\n' +
