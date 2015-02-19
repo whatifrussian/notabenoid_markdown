@@ -12,8 +12,7 @@
 // 2. Maybe get data as 'p.text()' (not 'p.html()') and put it via 'text'.
 //    But then we need to extra work with text chunks and new html objects.
 //    That more clean way, but also more difficult.
-// 3. Load MathJax only when it really needs. Add to MathJax queue only nodes,
-//    which contains formulas.
+// 3. Load MathJax only when it really needs.
 
 // via http://habrahabr.ru/post/129343/ and http://pastebin.com/9CXXYYBX
 // wrap the script in a closure (opera, ie)
@@ -73,7 +72,7 @@
             '        inlineMath: [ [\'$\',\'$\'] ],\n' +
             '        displayMath: [ [\'$$\',\'$$\'] ],\n' +
             '        processEscapes: true,\n' +
-            '        ignoreClass: "text|formula_source"\n' +
+            '        ignoreClass: "text|formula_source|inline_formula_source"\n' +
             '    },\n' +
             '    TeX: {\n' +
             '      extensions: ["AMSmath.js", "AMSsymbols.js"]\n' +
@@ -124,8 +123,25 @@
                 var start = 0;
                 var end = 0;
                 var matches;
+                var re = s.re;
 
-                while ((matches = s.re.exec(chunk.value.substring(idx))) != null) {
+                // TODO: make it looks like MyRegExp class
+                // for make non-capturing group not affecting idx
+                var start_non_capturing = (re.source.indexOf('(!:') == 0);
+                if (start_non_capturing) {
+                    var new_source = re.source.replace(/^\(!:/, '(');
+                    re = new RegExp(new_source);
+                }
+
+                while ((matches = re.exec(chunk.value.substring(idx))) != null) {
+                    if (start_non_capturing) {
+                        matches.index += matches[1].length;
+                        matches[0] = matches[0].substring(matches[1].length);
+                        for (var i = 1; i < matches.length; ++i)
+                            matches[i] = matches[i+1];
+                        matches[matches.length-1] = null;
+                    }
+
                     start = idx + matches.index;
                     end = idx + matches.index + matches[0].length - 1;
 
@@ -192,21 +208,24 @@
 
             substitutions = [{
                 // displayed formula
-                re: /(?:^|[^\\])\${2}.+(?:[^\\])\${2}/,
+                re: /(!:^|[^\\])\${2}[^"]*(?:[^\\"])\${2}/,
                 tmpl: [{
                     value: '<span class="formula_source">$0</span>',
                     result_type: ChunkType.OTHER
                 }, {
-                    value: '<span class="formula_rendered">$0</span>',
+                    value: '<span class="formula_rendered" title="$0">$0</span>',
                     result_type: ChunkType.OTHER
                 }],
                 where: Where.BOTH,
                 applicable_to: [ChunkType.PLAIN_TEXT]
             }, {
                 // inline formula
-                re: /(?:^|[^\\])\$.+(?:[^\\])\$/,
+                re: /(!:^|[^\\])\$[^"]*(?:[^\\"])\$/,
                 tmpl: [{
-                    value: '<span class="formula_rendered">$0</span>',
+                    value: '<span class="inline_formula_source">$0</span>',
+                    result_type: ChunkType.OTHER
+                }, {
+                    value: '<span class="inline_formula_rendered" title="$0">$0</span>',
                     result_type: ChunkType.OTHER
                 }],
                 where: Where.BOTH,
@@ -392,6 +411,9 @@
                 p_rendered.children('.formula_rendered').each(function(){
                     MathJax.Hub.Queue(["Typeset", MathJax.Hub, $(this)[0]]);
                 });
+                p_rendered.children('.inline_formula_rendered').each(function(){
+                    MathJax.Hub.Queue(["Typeset", MathJax.Hub, $(this)[0]]);
+                });
             }
         }
 
@@ -477,6 +499,12 @@
                 'word-wrap: break-word;\n' +
             '}\n' +
             '.formula_source { color: #b8b8b8; }\n' +
+            '.inline_formula_source { font-size: 0; }\n' +
+            '.formula_rendered text, inline_formula_rendered text {\n' +
+                '-webkit-user-select: none;\n' +
+                '-moz-user-select: none;\n' +
+                'user-select: none;\n' +
+            '}\n' +
             '.quote_block { color: #306030; }\n' +
             '.labels_block { color: #b8b8b8; }\n' +
             '.md_image_url { color: #b8b8b8; }\n' +
