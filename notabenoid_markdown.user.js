@@ -229,10 +229,15 @@
             });
 
             var ChunkType = Object.freeze({
+                // all substitutions applicable for plain text, except character names parsing
                 PLAIN_TEXT:      1,
+                // all substitutions, except s-s that has no sense for labels block
                 LABELS_BLOCK:    2,
+                // no substitutions except url parsing
                 CAN_CONTAIN_URL: 3,
+                // no substitutions except url checking (for percent encoding)
                 TO_URL_CHECK:    4,
+                // no substitutions
                 OTHER:           5
             });
 
