@@ -224,14 +224,16 @@
                 QUOTES: "«Компьютерные» кавычки вместо русских «елочек» или английских «лапок»",
                 APOSTROPHE: "«Компьютерный» апостроф вместо одиночной закрывающей кавычки-«лапки»",
                 ABBR_SPACE: "Отсутствует пробел после сокращения (правильно: «т. е.», «и т. д.»)",
-                SOLID_LONG_NUMBER: "Длинное число без разделителя разрядов (правильно: 123&amp;thinsp;000)"
+                SOLID_LONG_NUMBER: "Длинное число без разделителя разрядов (правильно: 123&amp;thinsp;000)",
+                PERCENT_ENCODING: "Нечитаемый для человека URL (percent encoding для кирилицы)"
             });
 
             var ChunkType = Object.freeze({
                 PLAIN_TEXT:      1,
                 LABELS_BLOCK:    2,
                 CAN_CONTAIN_URL: 3,
-                OTHER:           4
+                TO_URL_CHECK:    4,
+                OTHER:           5
             });
 
             substitutions = [{
@@ -311,7 +313,7 @@
                 tmpl: [{
                     value: '![]<span class="md_image_url">($1$2' +
                         '<span class="md_image_title">$3</span>)</span>',
-                    result_type: ChunkType.OTHER
+                    result_type: ChunkType.TO_URL_CHECK
                 }],
                 where: Where.BOTH,
                 applicable_to: [ChunkType.PLAIN_TEXT]
@@ -327,7 +329,7 @@
                 }, {
                     value: '</a>]<span class="md_link_url">($2$3' +
                         '<span class="md_link_title">$4</span>)</span>',
-                    result_type: ChunkType.OTHER
+                    result_type: ChunkType.TO_URL_CHECK
                 }],
                 where: Where.BOTH,
                 applicable_to: [ChunkType.PLAIN_TEXT]
@@ -342,7 +344,7 @@
                     result_type: ChunkType.PLAIN_TEXT
                 }, {
                     value: '</a>]<span class="md_link_url">($2)</span>',
-                    result_type: ChunkType.OTHER
+                    result_type: ChunkType.TO_URL_CHECK
                 }],
                 where: Where.BOTH,
                 applicable_to: [ChunkType.PLAIN_TEXT]
@@ -368,8 +370,11 @@
                 // urls
                 re: new RegExp(url_re),
                 tmpl: [{
-                    value: '<a href="$0" class="any_link_url">$0</a>',
+                    value: '<a href="$0" class="any_link_url">',
                     result_type: ChunkType.OTHER
+                }, {
+                    value: '$0</a>',
+                    result_type: ChunkType.TO_URL_CHECK
                 }],
                 where: Where.BOTH,
                 applicable_to: [ChunkType.PLAIN_TEXT, ChunkType.CAN_CONTAIN_UR, ChunkType.LABELS_BLOCKL]
@@ -481,6 +486,15 @@
                 }],
                 where: Where.TRAN,
                 applicable_to: [ChunkType.PLAIN_TEXT, ChunkType.LABELS_BLOCK]
+            }, {
+                // mistake: cyrillic letters percent encoded in URL
+                re: /(?:%D0%[9AB][0-9ABCDEF]|%D1%[8][0-9ABCDEF]|%D0%81|%D1%91)+/,
+                tmpl: [{
+                    value: '<span class="mistake" title="' + Desc.PERCENT_ENCODING + '">$0</span>',
+                    result_type: ChunkType.OTHER
+                }],
+                where: Where.TRAN,
+                applicable_to: [ChunkType.PLAIN_TEXT, ChunkType.TO_URL_CHECK]
             }];
 
             var chunks = [{
