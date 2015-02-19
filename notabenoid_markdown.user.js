@@ -112,6 +112,24 @@
             return 'tagName' in jQNode[0] ? jQNode[0].tagName.toLowerCase() : null;
         }
 
+        /* About (!:x) notation
+         * ====================
+         *
+         * It is emulation for positive lookbehind (that have '(?<=x)' syntax)
+         * due to JS don't support it. This implementation (see 'parse_by'
+         * function) works for *one* occurence of '(!:x)' in *begin* of regexp
+         * and correct only for regexps *without any flags* (it skip flags
+         * because JS has no standard RegExp fields for acquire it).
+
+         * I cannot use standard '(?<=x)' syntax because JS failed at new
+         * RegExp creation (with 'invalid regexp group' message in Firefox). So
+         * standard syntax isn't supported by JS and it forbid to hold such
+         * expressions in RegExp objects for later emulation. Sad.
+
+         * Negative lookbehind would be more appropriate in regexps that I use
+         * below, but it hard to emulate fully correct (for example in case '^'
+         * special symbol in the lookbehind expression). */
+
         // s -- substitution
         function parse_by(chunks, s) {
             var out = [];
