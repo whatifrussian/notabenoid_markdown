@@ -187,8 +187,7 @@
             var ChunkType = Object.freeze({
                 PLAIN_TEXT:      1,
                 CAN_CONTAIN_URL: 2,
-                ATTACH_TO_END:   3,
-                OTHER:           4
+                OTHER:           3
             });
 
             substitutions = [{
@@ -199,7 +198,7 @@
                     result_type: ChunkType.OTHER
                 }, {
                     value: '<span class="formula_rendered">$0</span>',
-                    result_type: ChunkType.ATTACH_TO_END
+                    result_type: ChunkType.OTHER
                 }],
                 where: Where.BOTH,
                 applicable_to: [ChunkType.PLAIN_TEXT]
@@ -377,20 +376,6 @@
                     (s.where == Where.TRAN && td_class == 't');
                 if (ok)
                     chunks = parse_by(chunks, s);
-            });
-
-            // move 'attach to end' nodes to end
-            var chunks_tail = [];
-            chunks = chunks.filter(function(chunk){
-                if (chunk.type == ChunkType.ATTACH_TO_END) {
-                    chunks_tail.push(chunk);
-                    return false;
-                } else {
-                    return true;
-                }
-            });
-            chunks_tail.forEach(function(chunk){
-                chunks.push(chunk);
             });
 
             body = "";
