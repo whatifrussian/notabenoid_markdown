@@ -16,6 +16,9 @@
 // 4. Hide '.[inline_]rendered_formula' before MathJax parse it.
 // 5. Fuzzy translation fragments with button 'copy it to new my own fragment and edit'.
 // 6. Adjust class names to similar on website.
+// 7. Metainfo fragment. Hold metainfo in last original fragment (if empty, remove that fragment).
+//    Objection for original vs translation fragment: original hardly to accidental spoil.
+//    Usage: for holding IDs of fragments with open discussion about it.
 
 // via http://habrahabr.ru/post/129343/ and http://pastebin.com/9CXXYYBX
 // wrap the script in a closure (opera, ie)
