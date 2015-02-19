@@ -13,6 +13,8 @@
 //    But then we need to extra work with text chunks and new html objects.
 //    That more clean way, but also more difficult.
 // 3. Load MathJax only when it really needs.
+// 4. Hide '.[inline_]rendered_formula' before MathJax parse it.
+// 5. Fuzzy translation fragments with button 'copy it to new my own fragment and edit'.
 
 // via http://habrahabr.ru/post/129343/ and http://pastebin.com/9CXXYYBX
 // wrap the script in a closure (opera, ie)
