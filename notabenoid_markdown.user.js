@@ -15,6 +15,7 @@
 // 3. Load MathJax only when it really needs.
 // 4. Hide '.[inline_]rendered_formula' before MathJax parse it.
 // 5. Fuzzy translation fragments with button 'copy it to new my own fragment and edit'.
+// 6. Adjust class names to similar on website.
 
 // via http://habrahabr.ru/post/129343/ and http://pastebin.com/9CXXYYBX
 // wrap the script in a closure (opera, ie)
@@ -177,6 +178,8 @@
         }
 
         function process(p) {
+            p_rendered = jQ('<p/>', {class: 'text_rendered'});
+
             // via http://stackoverflow.com/a/3809435/1598057
             var letters_re = 'а-яА-Яa-zA-Z';
             var proto_re = '(?:https?:|ftp:)?\\/\\/';
@@ -204,31 +207,43 @@
 
             var ChunkType = Object.freeze({
                 PLAIN_TEXT:      1,
-                CAN_CONTAIN_URL: 2,
-                OTHER:           3
+                LABELS_BLOCK:    2,
+                CAN_CONTAIN_URL: 3,
+                OTHER:           4
             });
 
             substitutions = [{
                 // displayed formula
                 re: /(!:^|[^\\])\${2}[^"]*(?:[^\\"])\${2}/,
                 tmpl: [{
-                    value: '<span class="formula_source">$0</span>',
-                    result_type: ChunkType.OTHER
-                }, {
-                    value: '<span class="formula_rendered" title="$0">$0</span>',
+                    value: '<span class="formula_source">$0</span>' +
+                        '<span class="formula_rendered" title="$0">$0</span>',
                     result_type: ChunkType.OTHER
                 }],
                 where: Where.BOTH,
-                applicable_to: [ChunkType.PLAIN_TEXT]
+                applicable_to: [ChunkType.PLAIN_TEXT, ChunkType.LABELS_BLOCK]
             }, {
                 // inline formula
                 re: /(!:^|[^\\])\$[^"]*(?:[^\\"])\$/,
                 tmpl: [{
-                    value: '<span class="inline_formula_source">$0</span>',
+                    value: '<span class="inline_formula_source">$0</span>' +
+                        '<span class="inline_formula_rendered" title="$0">$0</span>',
+                    result_type: ChunkType.OTHER
+                }],
+                where: Where.BOTH,
+                applicable_to: [ChunkType.PLAIN_TEXT, ChunkType.LABELS_BLOCK]
+            }, {
+                // footnote fragment
+                re: /^(\[\^[0-9]{1,2}\]:)(.*)$/,
+                tmpl: [{
+                    value: '<span class="footnote_anchor">$1</span>',
                     result_type: ChunkType.OTHER
                 }, {
-                    value: '<span class="inline_formula_rendered" title="$0">$0</span>',
-                    result_type: ChunkType.OTHER
+                    value: function(matches){
+                        p_rendered.addClass('footnote_body');
+                        return matches[2];
+                    },
+                    result_type: ChunkType.PLAIN_TEXT
                 }],
                 where: Where.BOTH,
                 applicable_to: [ChunkType.PLAIN_TEXT]
@@ -242,10 +257,28 @@
                 where: Where.BOTH,
                 applicable_to: [ChunkType.PLAIN_TEXT]
             }, {
-                // [labels] and [/labels]
-                re: /\[\/?labels\]/,
+                // [labels] text [/labels]
+                re: /(\[labels\]<br>)((?:.|\n|\r)*)(\[\/labels\])/,
                 tmpl: [{
-                    value: '<span class="labels_block">$0</span>',
+                    value: '<span class="labels_label">$1</span>',
+                    result_type: ChunkType.OTHER
+                }, {
+                    value: '<div class="labels_block">$2</div>',
+                    result_type: ChunkType.LABELS_BLOCK
+                }, {
+                    value: '<span class="labels_label">$3</span>',
+                    result_type: ChunkType.OTHER
+                }],
+                where: Where.BOTH,
+                applicable_to: [ChunkType.PLAIN_TEXT]
+            }, {
+                // embed image: render: ![](url)
+                re: /^render:\s+!\[\]\(([^\)]+)\)/m,
+                tmpl: [{
+                    value: '<span class="rendered_md_src">$0</span>',
+                    result_type: ChunkType.CAN_CONTAIN_URL
+                }, {
+                    value: '<img src="$1"/>',
                     result_type: ChunkType.OTHER
                 }],
                 where: Where.BOTH,
@@ -266,25 +299,29 @@
                 // md link: [text](url "title")
                 re: /\[([^\]]*)\]\((\S+)(\s+)("[^"]*")\)/,
                 tmpl: [{
-                    value: '[$1](',
+                    value: '[<a href="$2" class="md_link_text">',
+                    result_type: ChunkType.OTHER
+                }, {
+                    value: '$1',
                     result_type: ChunkType.PLAIN_TEXT
                 }, {
-                    value: '$2',
-                    result_type: ChunkType.CAN_CONTAIN_URL
-                }, {
-                    value: '$3<span class="md_link_title">$4</span>)',
+                    value: '</a>]<span class="md_link_url">($2$3' +
+                        '<span class="md_link_title">$4</span>)</span>',
                     result_type: ChunkType.OTHER
                 }],
                 where: Where.BOTH,
                 applicable_to: [ChunkType.PLAIN_TEXT]
             }, {
-                // embed image: render: ![](url)
-                re: /^render:\s+!\[\]\(([^\)]+)\)/m,
+                // md link: [text](url)
+                re: /\[([^\]]*)\]\((\S+)\)/,
                 tmpl: [{
-                    value: '<span class="rendered_md_src">$0</span>',
-                    result_type: ChunkType.CAN_CONTAIN_URL
+                    value: '[<a href="$2" class="md_link_text">',
+                    result_type: ChunkType.OTHER
                 }, {
-                    value: '<img src="$1"/>',
+                    value: '$1',
+                    result_type: ChunkType.PLAIN_TEXT
+                }, {
+                    value: '</a>]<span class="md_link_url">($2)</span>',
                     result_type: ChunkType.OTHER
                 }],
                 where: Where.BOTH,
@@ -297,7 +334,7 @@
                     result_type: ChunkType.OTHER
                 }],
                 where: Where.TRAN,
-                applicable_to: [ChunkType.PLAIN_TEXT]
+                applicable_to: [ChunkType.PLAIN_TEXT, ChunkType.LABELS_BLOCK]
             }, {
                 // special sequences: '&nbsp;' and '&thinsp;'
                 re: /&amp;(nbsp|thinsp);/,
@@ -306,20 +343,16 @@
                     result_type: ChunkType.OTHER
                 }],
                 where: Where.BOTH,
-                applicable_to: [ChunkType.PLAIN_TEXT]
+                applicable_to: [ChunkType.PLAIN_TEXT, ChunkType.LABELS_BLOCK]
             }, {
                 // urls
                 re: new RegExp(url_re),
                 tmpl: [{
-                    value: function(matches){
-                        var url = matches[0].replace('&amp;', '&');
-                        var url_d = matches[0];
-                        return '<a href="' + url + '" class="any_link_url">' + url_d + '</a>';
-                    },
+                    value: '<a href="$0" class="any_link_url">$0</a>',
                     result_type: ChunkType.OTHER
                 }],
                 where: Where.BOTH,
-                applicable_to: [ChunkType.PLAIN_TEXT, ChunkType.CAN_CONTAIN_URL]
+                applicable_to: [ChunkType.PLAIN_TEXT, ChunkType.CAN_CONTAIN_UR, ChunkType.LABELS_BLOCKL]
             }, {
                 // mistake: 'text.[^1]' or 'text[^1]?'
                 re: /[.,;:— ]\[\^[0-9]+\]|\[\^[0-9]+\][?!…]/,
@@ -330,6 +363,15 @@
                 where: Where.TRAN,
                 applicable_to: [ChunkType.PLAIN_TEXT]
             }, {
+                // footnote reference
+                re: /\[\^[0-9]{1,2}\]/,
+                tmpl: [{
+                    value: '<sup class="footnote_ref">$0</sup>',
+                    result_type: ChunkType.OTHER
+                }],
+                where: Where.BOTH,
+                applicable_to: [ChunkType.PLAIN_TEXT]
+            }, {
                 // mistake: ... → …
                 re: /\.{3}/,
                 tmpl: [{
@@ -337,7 +379,7 @@
                     result_type: ChunkType.OTHER
                 }],
                 where: Where.TRAN,
-                applicable_to: [ChunkType.PLAIN_TEXT]
+                applicable_to: [ChunkType.PLAIN_TEXT, ChunkType.LABELS_BLOCK]
             }, {
                 // mistake: {hyphen, en dash} → em dash
                 re: /\S [-–] \S|^[-–] \S/,
@@ -346,7 +388,7 @@
                     result_type: ChunkType.OTHER
                 }],
                 where: Where.TRAN,
-                applicable_to: [ChunkType.PLAIN_TEXT]
+                applicable_to: [ChunkType.PLAIN_TEXT, ChunkType.LABELS_BLOCK]
             }, {
                 // mistake: {hyphen, em dash} → en dash
                 re: /\d[-—]\d/,
@@ -355,7 +397,7 @@
                     result_type: ChunkType.OTHER
                 }],
                 where: Where.TRAN,
-                applicable_to: [ChunkType.PLAIN_TEXT]
+                applicable_to: [ChunkType.PLAIN_TEXT, ChunkType.LABELS_BLOCK]
             }, {
                 // mistake: computer style quotes
                 re: /'[^']'|"[^"]"/,
@@ -364,7 +406,7 @@
                     result_type: ChunkType.OTHER
                 }],
                 where: Where.TRAN,
-                applicable_to: [ChunkType.PLAIN_TEXT]
+                applicable_to: [ChunkType.PLAIN_TEXT, ChunkType.LABELS_BLOCK]
             }, {
                 // mistake: computer style apostrophe
                 re: /'/,
@@ -373,7 +415,7 @@
                     result_type: ChunkType.OTHER
                 }],
                 where: Where.TRAN,
-                applicable_to: [ChunkType.PLAIN_TEXT]
+                applicable_to: [ChunkType.PLAIN_TEXT, ChunkType.LABELS_BLOCK]
             }, {
                 // mistake: no space after abbreviation word
                 re: new RegExp('[' + letters_re + ']\\.[' + letters_re + ']'),
@@ -382,7 +424,34 @@
                     result_type: ChunkType.OTHER
                 }],
                 where: Where.TRAN,
-                applicable_to: [ChunkType.PLAIN_TEXT]
+                applicable_to: [ChunkType.PLAIN_TEXT, ChunkType.LABELS_BLOCK]
+            }, {
+                // **bold**
+                re: /(!:^|[^\\])\*\*[^*]+\*\*/,
+                tmpl: [{
+                    value: '<strong>$0</strong>',
+                    result_type: ChunkType.OTHER
+                }],
+                where: Where.BOTH,
+                applicable_to: [ChunkType.PLAIN_TEXT, ChunkType.LABELS_BLOCK]
+            }, {
+                // *italic*
+                re: /(!:^|[^\\])\*[^*]+\*/,
+                tmpl: [{
+                    value: '<em>$0</em>',
+                    result_type: ChunkType.OTHER
+                }],
+                where: Where.BOTH,
+                applicable_to: [ChunkType.PLAIN_TEXT, ChunkType.LABELS_BLOCK]
+            }, {
+                // characters names
+                re: /^\S+:/m,
+                tmpl: [{
+                    value: '<span class="char_name">$0</span>',
+                    result_type: ChunkType.OTHER
+                }],
+                where: Where.BOTH,
+                applicable_to: [ChunkType.LABELS_BLOCK]
             }];
 
             var chunks = [{
@@ -404,7 +473,7 @@
                 body += chunk.value;
             });
 
-            p_rendered = jQ('<p/>', {class: 'text_rendered', html: body});
+            p_rendered.html(body);
             p.after(p_rendered);
 
             // Process with MathJax if it already loaded.
@@ -507,16 +576,44 @@
                 '-moz-user-select: none;\n' +
                 'user-select: none;\n' +
             '}\n' +
-            '.quote_block { color: #306030; }\n' +
-            '.labels_block { color: #b8b8b8; }\n' +
-            '.md_image_url { color: #b8b8b8; }\n' +
+            '#Tr tr:first-child .text_rendered {\n' +
+                'font-weight: bold;\n' +
+            '}\n' +
+            '.quote_block    { color: #53830d; }\n' +
+            '.labels_label   { color: #b8b8b8; }\n' +
+            '.labels_block   {\n' +
+                'margin: 0 0 0 20px;\n' +
+                'line-indent: 1.5em\n' +
+            '}\n' +
+            '.char_name      {\n'+
+                'font-style: italic;\n' +
+                'font-weight: bold;\n' +
+                'color: #b8b8b8;\n' +
+            '}\n' +
+            '.md_image_url   { color: #b8b8b8; }\n' +
             '.md_image_title { color: #306030; }\n' +
-            '.md_link_url { color: #b8b8b8; }\n' +
-            '.md_link_title { color: #306030; }\n' +
-            '.special_seq { color: #b8b8b8; }\n' +
-            '.any_link_url { color: #b8b8b8; }\n' +
+            '.md_link_text   { color: #7ab130; }\n' +
+            '.md_link_url    { color: #b8b8b8; }\n' +
+            '.md_link_title  { color: #306030; }\n' +
+            '.special_seq    { color: #b8b8b8; }\n' +
+            '.any_link_url   { color: #b8b8b8; }\n' +
             '.rendered_md_src { display: none; }\n' +
-            '.mistake { border-bottom: 1px dotted #ff0000; }\n'
+            '.text_rendered.footnote_body {\n' +
+                'background-color: #faffee;\n' +
+                'box-shadow: 0px 0px 1px 1px rgba(150, 200, 0, 0.7);\n' +
+                '-moz-box-shadow: 0px 0px 1px 1px rgba(150, 200, 0, 0.7);\n' +
+                '-webkit-box-shadow: 0px 0px 1px 1px rgba(150, 200, 0, 0.7);\n' +
+                'margin: 10px 71px 10px 10px;\n' +
+                'padding: 4px 24px 4px 4px;\n' +
+            '}\n' +
+            '.footnote_anchor { color: #53830d; }\n' +
+            '.footnote_ref {\n' +
+                'color: #53830d;\n' +
+            '}\n' +
+            '.mistake {\n' +
+                'border-bottom: 2px dotted red;\n' +
+                'background-color: #fee;\n' +
+            '}\n'
         );
         addJQuery(main);
     }
