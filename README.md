@@ -1,13 +1,9 @@
 ## Installation
 
-Firefox:
-
-1. Install the [Scriptish](https://addons.mozilla.org/ru/firefox/addon/scriptish/) addon.
+1. Install the [Scriptish](https://addons.mozilla.org/ru/firefox/addon/scriptish/) addon for Firefox or [TamperMonkey](http://tampermonkey.net/#download) addon for Chrome/Chromium.
 2. Install [this userscript](https://github.com/whatifrussian/notabenoid_markdown/raw/master/notabenoid_markdown.user.js).
 
-Chrome:
-
-You need only step two from list above :)
+For Chrome/Chromium you can skip first step, download script and install it from local file. But then you lose ability to easy updating the script.
 
 ## License
 
