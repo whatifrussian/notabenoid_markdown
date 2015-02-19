@@ -377,7 +377,7 @@
                     result_type: ChunkType.TO_URL_CHECK
                 }],
                 where: Where.BOTH,
-                applicable_to: [ChunkType.PLAIN_TEXT, ChunkType.CAN_CONTAIN_UR, ChunkType.LABELS_BLOCKL]
+                applicable_to: [ChunkType.PLAIN_TEXT, ChunkType.CAN_CONTAIN_URL, ChunkType.LABELS_BLOCK]
             }, {
                 // mistake: 'text.[^1]' or 'text[^1]?'
                 re: /[.,;:— ]\[\^[0-9]+\]|\[\^[0-9]+\][?!…]/,
