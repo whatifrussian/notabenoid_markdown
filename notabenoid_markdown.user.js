@@ -73,7 +73,7 @@
             '        inlineMath: [ [\'$\',\'$\'] ],\n' +
             '        displayMath: [ [\'$$\',\'$$\'] ],\n' +
             '        processEscapes: true,\n' +
-            '        ignoreClass: [\'text\']\n' +
+            '        ignoreClass: "text|formula_source"\n' +
             '    },\n' +
             '    TeX: {\n' +
             '      extensions: ["AMSmath.js", "AMSsymbols.js"]\n' +
@@ -187,20 +187,32 @@
             var ChunkType = Object.freeze({
                 PLAIN_TEXT:      1,
                 CAN_CONTAIN_URL: 2,
-                OTHER:           3
+                ATTACH_TO_END:   3,
+                OTHER:           4
             });
 
             substitutions = [{
-                // formulas
-                re: /(?:^|[^\\])\${1,2}.+(?:[^\\])\${1,2}/,
+                // displayed formula
+                re: /(?:^|[^\\])\${2}.+(?:[^\\])\${2}/,
                 tmpl: [{
-                    value: '$0',
+                    value: '<span class="formula_source">$0</span>',
+                    result_type: ChunkType.OTHER
+                }, {
+                    value: '<span class="formula_rendered">$0</span>',
+                    result_type: ChunkType.ATTACH_TO_END
+                }],
+                where: Where.BOTH,
+                applicable_to: [ChunkType.PLAIN_TEXT]
+            }, {
+                // inline formula
+                re: /(?:^|[^\\])\$.+(?:[^\\])\$/,
+                tmpl: [{
+                    value: '<span class="formula_rendered">$0</span>',
                     result_type: ChunkType.OTHER
                 }],
                 where: Where.BOTH,
                 applicable_to: [ChunkType.PLAIN_TEXT]
             }, {
-
                 // quote with '>' (for example article question)
                 re: /^&gt;.*$/m,
                 tmpl: [{
@@ -367,6 +379,20 @@
                     chunks = parse_by(chunks, s);
             });
 
+            // move 'attach to end' nodes to end
+            var chunks_tail = [];
+            chunks = chunks.filter(function(chunk){
+                if (chunk.type == ChunkType.ATTACH_TO_END) {
+                    chunks_tail.push(chunk);
+                    return false;
+                } else {
+                    return true;
+                }
+            });
+            chunks_tail.forEach(function(chunk){
+                chunks.push(chunk);
+            });
+
             body = "";
             chunks.forEach(function(chunk){
                 body += chunk.value;
@@ -378,7 +404,9 @@
             // Process with MathJax if it already loaded.
             // If not, then it will processed when MathJax loaded.
             if (typeof MathJax != 'undefined') {
-                MathJax.Hub.Queue(["Typeset", MathJax.Hub, p_rendered[0]]);
+                p_rendered.children('.formula_rendered').each(function(){
+                    MathJax.Hub.Queue(["Typeset", MathJax.Hub, $(this)[0]]);
+                });
             }
         }
 
@@ -463,6 +491,7 @@
                 'line-height: 130%;\n' +
                 'word-wrap: break-word;\n' +
             '}\n' +
+            '.formula_source { color: #b8b8b8; }\n' +
             '.quote_block { color: #306030; }\n' +
             '.labels_block { color: #b8b8b8; }\n' +
             '.md_image_url { color: #b8b8b8; }\n' +
