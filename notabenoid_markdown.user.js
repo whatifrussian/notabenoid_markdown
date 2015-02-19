@@ -202,7 +202,8 @@
                 SPACE_PERCENT: "Пробел перед знаком процента",
                 QUOTES: "«Компьютерные» кавычки вместо русских «елочек» или английских «лапок»",
                 APOSTROPHE: "«Компьютерный» апостроф вместо одиночной закрывающей кавычки-«лапки»",
-                ABBR_SPACE: "Отсутствует пробел после сокращения (правильно: «т. е.», «и т. д.»)"
+                ABBR_SPACE: "Отсутствует пробел после сокращения (правильно: «т. е.», «и т. д.»)",
+                SOLID_LONG_NUMBER: "Длинное число без разделителя разрядов (правильно: 123&amp;thinsp;000)"
             });
 
             var ChunkType = Object.freeze({
@@ -450,6 +451,15 @@
                 }],
                 where: Where.BOTH,
                 applicable_to: [ChunkType.LABELS_BLOCK]
+            }, {
+                // mistake: long number without &thinsp;
+                re: /\d{5,}/,
+                tmpl: [{
+                    value: '<span class="mistake" title="' + Desc.SOLID_LONG_NUMBER + '">$0</span>',
+                    result_type: ChunkType.OTHER
+                }],
+                where: Where.TRAN,
+                applicable_to: [ChunkType.PLAIN_TEXT, ChunkType.LABELS_BLOCK]
             }];
 
             var chunks = [{
