@@ -3,7 +3,7 @@
 // @description Markdown parser for notabenoid.org service
 // @author Alexander Turenko <totktonada.ru@gmail.com>
 // @license Public Domain
-// @version 1.7
+// @version 1.8
 // @include http://notabenoid.com*
 // @include /^http://notabenoid\.org/book/(41531|45955)/.+/
 // ==/UserScript==
@@ -336,7 +336,7 @@
                 applicable_to: [ChunkType.PLAIN_TEXT]
             }, {
                 // md image: ![](url "title")
-                re: /!\[\]\((\S+)(\s+)(".*")\)/,
+                re: /!\[\]\((\S+)(\s+)("(?:[^"]|\\")*[^\\]")\)/,
                 tmpl: [{
                     value: '![]<span class="md_image_url">($1$2' +
                         '<span class="md_image_title">$3</span>)</span>',
@@ -347,7 +347,7 @@
                 applicable_to: [ChunkType.PLAIN_TEXT]
             }, {
                 // md link: [text](url "title")
-                re: /\[([^\]]*)\]\((\S+)(\s+)("[^"]*")\)/,
+                re: /\[([^\]]*)\]\((\S+)(\s+)("(?:[^"]|\\")*[^\\]")\)/,
                 tmpl: [{
                     value: '<span class="md_link_url">[<a href="$2" class="md_link_text">',
                     result_type: ChunkType.OTHER
