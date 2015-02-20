@@ -329,13 +329,13 @@
                 // md link: [text](url "title")
                 re: /\[([^\]]*)\]\((\S+)(\s+)("[^"]*")\)/,
                 tmpl: [{
-                    value: '[<a href="$2" class="md_link_text">',
+                    value: '<span class="md_link_url">[<a href="$2" class="md_link_text">',
                     result_type: ChunkType.OTHER
                 }, {
                     value: '$1',
                     result_type: ChunkType.PLAIN_TEXT
                 }, {
-                    value: '</a>]<span class="md_link_url">($2$3' +
+                    value: '</a>]($2$3' +
                         '<span class="md_link_title">$4</span>)</span>',
                     result_type: ChunkType.TO_URL_CHECK
                 }],
@@ -345,13 +345,13 @@
                 // md link: [text](url)
                 re: /\[([^\]]*)\]\((\S+)\)/,
                 tmpl: [{
-                    value: '[<a href="$2" class="md_link_text">',
+                    value: '<span class="md_link_url">[<a href="$2" class="md_link_text">',
                     result_type: ChunkType.OTHER
                 }, {
                     value: '$1',
                     result_type: ChunkType.PLAIN_TEXT
                 }, {
-                    value: '</a>]<span class="md_link_url">($2)</span>',
+                    value: '</a>]($2)</span>',
                     result_type: ChunkType.TO_URL_CHECK
                 }],
                 where: Where.BOTH,
@@ -675,7 +675,7 @@
             '}\n' +
             '.md_image_url   { color: #b8b8b8; }\n' +
             '.md_image_title { color: #7ab130; }\n' +
-            '.md_link_text   { color: #7ab130; }\n' +
+            '.md_link_text   { color: #000000; }\n' +
             '.md_link_url    { color: #b8b8b8; }\n' +
             '.md_link_title  { color: #7ab130; }\n' +
             '.special_seq    { color: #b8b8b8; }\n' +
