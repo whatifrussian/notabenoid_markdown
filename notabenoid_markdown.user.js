@@ -671,7 +671,6 @@
             '}\n' +
             '.char_name      {\n'+
                 'font-style: italic;\n' +
-                'font-weight: bold;\n' +
                 'color: #b8b8b8;\n' +
             '}\n' +
             '.md_image_url   { color: #b8b8b8; }\n' +
