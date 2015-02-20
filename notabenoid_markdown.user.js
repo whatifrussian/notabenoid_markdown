@@ -669,10 +669,10 @@
                 'color: #b8b8b8;\n' +
             '}\n' +
             '.md_image_url   { color: #b8b8b8; }\n' +
-            '.md_image_title { color: #306030; }\n' +
+            '.md_image_title { color: #7ab130; }\n' +
             '.md_link_text   { color: #7ab130; }\n' +
             '.md_link_url    { color: #b8b8b8; }\n' +
-            '.md_link_title  { color: #306030; }\n' +
+            '.md_link_title  { color: #7ab130; }\n' +
             '.special_seq    { color: #b8b8b8; }\n' +
             '.any_link_url   { color: #b8b8b8; }\n' +
             '.rendered_md_src { display: none; }\n' +
