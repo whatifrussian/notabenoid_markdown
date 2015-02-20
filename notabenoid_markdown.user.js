@@ -281,7 +281,7 @@
                 re: /^(&gt;(?:.|\r|\n)*(?:<br>\r|<br>\n|<br>\r\n)?)+$/,
                 tmpl: [{
                     value: function(matches){
-                        p_rendered.addClass('quote_block');
+                        p.parent().addClass('quote_block');
                         return matches[0];
                     },
                     result_type: ChunkType.CAN_CONTAIN_URL
@@ -660,7 +660,7 @@
             '#Tr tr:first-child .text_rendered {\n' +
                 'font-weight: bold;\n' +
             '}\n' +
-            '.text_rendered.quote_block {\n' +
+            '.quote_block {\n' +
                 'background-color: #f0f8e6;\n' +
                 'color: #53830d;\n' +
             '}\n' +
