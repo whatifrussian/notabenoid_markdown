@@ -1,3 +1,7 @@
+## About
+
+This is userscript for support the process of translating [What If?](http://what-if.xkcd.com) articles and [xkcd](http://xkcd.com) webcomic to Russian. It parse and style text fragments on Notabenoid (the service for collective text tranlating) for convenient reading and editing.
+
 ## Installation
 
 1. Install the [Scriptish](https://addons.mozilla.org/ru/firefox/addon/scriptish/) addon for Firefox or [TamperMonkey](http://tampermonkey.net/#download) addon for Chrome/Chromium.
