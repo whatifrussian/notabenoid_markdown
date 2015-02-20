@@ -4,6 +4,7 @@
 // @author Alexander Turenko <totktonada.ru@gmail.com>
 // @license Public Domain
 // @version 1.6
+// @include http://notabenoid.com*
 // @include http://notabenoid.org/book/41531/*
 // ==/UserScript==
 
@@ -609,8 +610,11 @@
         observer_new.observe(jQ('table#Tr > tbody')[0], {childList: true});
     }
 
-    // Additional url check: Chrome do not treat @match as intended sometimes.
-    if (/http:\/\/notabenoid.org\/book\/41531\//.test(w.location.href)) {
+    var loc = w.location.href;
+    if (loc.indexOf('http://notabenoid.com') == 0) {
+        var new_loc = loc.replace(/^http:\/\/notabenoid.com/, 'http://notabenoid.org');
+        window.location.replace(new_loc);
+    } else if (loc.indexOf('http://notabenoid.org/book/41531/') == 0) {
         addMathJax();
         addGlobalStyle(
             // hide .text and make .text_rendered looks like
