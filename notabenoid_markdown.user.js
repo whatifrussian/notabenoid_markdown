@@ -5,7 +5,7 @@
 // @license Public Domain
 // @version 1.6
 // @include http://notabenoid.com*
-// @include http://notabenoid.org/book/41531/*
+// @include /^http://notabenoid\.org/book/(41531|45955)/.+/
 // ==/UserScript==
 
 // ## TODO’s residence
@@ -614,7 +614,9 @@
     if (loc.indexOf('http://notabenoid.com') == 0) {
         var new_loc = loc.replace(/^http:\/\/notabenoid.com/, 'http://notabenoid.org');
         window.location.replace(new_loc);
-    } else if (loc.indexOf('http://notabenoid.org/book/41531/') == 0) {
+    } else if (loc.indexOf('http://notabenoid.org/book/41531/') == 0 ||
+            loc.indexOf('http://notabenoid.org/book/45955/') == 0)
+    {
         addMathJax();
         addGlobalStyle(
             // hide .text and make .text_rendered looks like
