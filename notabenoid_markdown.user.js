@@ -96,6 +96,18 @@
 
     // This function will injected to page source.
     function main() {
+        loc = window.location.href.substring('http://notabenoid.org'.length);
+        var BookType = Object.freeze({
+            UNDEFINED: 0,
+            WHAT_IF:   1,
+            XKCD:      2,
+            BOTH:      3
+        });
+        var book =
+            (loc.indexOf('/book/41531/') == 0) ? BookType.WHAT_IF :
+            (loc.indexOf('/book/45955/') == 0) ? BookType.XKCD :
+            BookType.UNDEFINED;
+
         // via http://stackoverflow.com/a/7356528/1598057
         function isFunction(v) {
             var getType = {};
@@ -250,6 +262,7 @@
                         '<span class="formula_rendered" title="$0">$0</span>',
                     result_type: ChunkType.OTHER
                 }],
+                for_book: BookType.WHAT_IF,
                 where: Where.BOTH,
                 applicable_to: [ChunkType.PLAIN_TEXT, ChunkType.LABELS_BLOCK]
             }, {
@@ -260,6 +273,7 @@
                         '<span class="inline_formula_rendered" title="$0">$0</span>',
                     result_type: ChunkType.OTHER
                 }],
+                for_book: BookType.WHAT_IF,
                 where: Where.BOTH,
                 applicable_to: [ChunkType.PLAIN_TEXT, ChunkType.LABELS_BLOCK]
             }, {
@@ -275,6 +289,7 @@
                     },
                     result_type: ChunkType.PLAIN_TEXT
                 }],
+                for_book: BookType.WHAT_IF,
                 where: Where.BOTH,
                 applicable_to: [ChunkType.PLAIN_TEXT]
             }, {
@@ -287,6 +302,7 @@
                     },
                     result_type: ChunkType.CAN_CONTAIN_URL
                 }],
+                for_book: BookType.WHAT_IF,
                 where: Where.BOTH,
                 applicable_to: [ChunkType.PLAIN_TEXT]
             }, {
@@ -302,6 +318,7 @@
                     value: '<span class="labels_label">$3</span>',
                     result_type: ChunkType.OTHER
                 }],
+                for_book: BookType.WHAT_IF,
                 where: Where.BOTH,
                 applicable_to: [ChunkType.PLAIN_TEXT]
             }, {
@@ -314,6 +331,7 @@
                     value: '<img src="$1"/>',
                     result_type: ChunkType.OTHER
                 }],
+                for_book: BookType.BOTH,
                 where: Where.BOTH,
                 applicable_to: [ChunkType.PLAIN_TEXT]
             }, {
@@ -324,6 +342,7 @@
                         '<span class="md_image_title">$3</span>)</span>',
                     result_type: ChunkType.TO_URL_CHECK
                 }],
+                for_book: BookType.WHAT_IF,
                 where: Where.BOTH,
                 applicable_to: [ChunkType.PLAIN_TEXT]
             }, {
@@ -340,6 +359,7 @@
                         '<span class="md_link_title">$4</span>)</span>',
                     result_type: ChunkType.TO_URL_CHECK
                 }],
+                for_book: BookType.WHAT_IF,
                 where: Where.BOTH,
                 applicable_to: [ChunkType.PLAIN_TEXT]
             }, {
@@ -355,6 +375,7 @@
                     value: '</a>]($2)</span>',
                     result_type: ChunkType.TO_URL_CHECK
                 }],
+                for_book: BookType.WHAT_IF,
                 where: Where.BOTH,
                 applicable_to: [ChunkType.PLAIN_TEXT]
             }, {
@@ -364,6 +385,7 @@
                     value: '<span class="mistake" title="' + Desc.SPACE_PERCENT + '">$0</span>',
                     result_type: ChunkType.OTHER
                 }],
+                for_book: BookType.BOTH,
                 where: Where.TRAN,
                 applicable_to: [ChunkType.PLAIN_TEXT, ChunkType.LABELS_BLOCK]
             }, {
@@ -373,6 +395,7 @@
                     value: '<span class="special_seq">&amp;$1;</span>',
                     result_type: ChunkType.OTHER
                 }],
+                for_book: BookType.WHAT_IF,
                 where: Where.BOTH,
                 applicable_to: [ChunkType.PLAIN_TEXT, ChunkType.LABELS_BLOCK]
             }, {
@@ -385,6 +408,7 @@
                     value: '$0</a>',
                     result_type: ChunkType.TO_URL_CHECK
                 }],
+                for_book: BookType.BOTH,
                 where: Where.BOTH,
                 applicable_to: [ChunkType.PLAIN_TEXT, ChunkType.CAN_CONTAIN_URL, ChunkType.LABELS_BLOCK]
             }, {
@@ -394,6 +418,7 @@
                     value: '<span class="mistake" title="' + Desc.FOOTNOTE_PUNCTUM + '">$0</span>',
                     result_type: ChunkType.OTHER
                 }],
+                for_book: BookType.WHAT_IF,
                 where: Where.TRAN,
                 applicable_to: [ChunkType.PLAIN_TEXT]
             }, {
@@ -403,6 +428,7 @@
                     value: '<sup class="footnote_ref">$0</sup>',
                     result_type: ChunkType.OTHER
                 }],
+                for_book: BookType.WHAT_IF,
                 where: Where.BOTH,
                 applicable_to: [ChunkType.PLAIN_TEXT]
             }, {
@@ -412,6 +438,7 @@
                     value: '<span class="mistake" title="' + Desc.DOTS + '">$0</span>',
                     result_type: ChunkType.OTHER
                 }],
+                for_book: BookType.BOTH,
                 where: Where.TRAN,
                 applicable_to: [ChunkType.PLAIN_TEXT, ChunkType.LABELS_BLOCK]
             }, {
@@ -421,6 +448,7 @@
                     value: '<span class="mistake" title="' + Desc.NOT_EM_DASH + '">$0</span>',
                     result_type: ChunkType.OTHER
                 }],
+                for_book: BookType.BOTH,
                 where: Where.TRAN,
                 applicable_to: [ChunkType.PLAIN_TEXT, ChunkType.LABELS_BLOCK]
             }, {
@@ -430,6 +458,7 @@
                     value: '<span class="mistake" title="' + Desc.NOT_EN_DASH + '">$0</span>',
                     result_type: ChunkType.OTHER
                 }],
+                for_book: BookType.BOTH,
                 where: Where.TRAN,
                 applicable_to: [ChunkType.PLAIN_TEXT, ChunkType.LABELS_BLOCK]
             }, {
@@ -439,6 +468,7 @@
                     value: '<span class="mistake" title="' + Desc.QUOTES + '">$0</span>',
                     result_type: ChunkType.OTHER
                 }],
+                for_book: BookType.BOTH,
                 where: Where.TRAN,
                 applicable_to: [ChunkType.PLAIN_TEXT, ChunkType.LABELS_BLOCK]
             }, {
@@ -448,6 +478,7 @@
                     value: '<span class="mistake" title="' + Desc.APOSTROPHE + '">$0</span>',
                     result_type: ChunkType.OTHER
                 }],
+                for_book: BookType.BOTH,
                 where: Where.TRAN,
                 applicable_to: [ChunkType.PLAIN_TEXT, ChunkType.LABELS_BLOCK]
             }, {
@@ -457,6 +488,7 @@
                     value: '<span class="mistake" title="' + Desc.ABBR_SPACE + '">$0</span>',
                     result_type: ChunkType.OTHER
                 }],
+                for_book: BookType.BOTH,
                 where: Where.TRAN,
                 applicable_to: [ChunkType.PLAIN_TEXT, ChunkType.LABELS_BLOCK]
             }, {
@@ -466,6 +498,7 @@
                     value: '<strong>$0</strong>',
                     result_type: ChunkType.OTHER
                 }],
+                for_book: BookType.BOTH,
                 where: Where.BOTH,
                 applicable_to: [ChunkType.PLAIN_TEXT, ChunkType.LABELS_BLOCK]
             }, {
@@ -475,17 +508,41 @@
                     value: '<em>$0</em>',
                     result_type: ChunkType.OTHER
                 }],
+                for_book: BookType.BOTH,
                 where: Where.BOTH,
                 applicable_to: [ChunkType.PLAIN_TEXT, ChunkType.LABELS_BLOCK]
             }, {
-                // characters names
-                re: /^\S+:/m,
+                // fragment with title text
+                re: /^(Title(?: text|-текст):)((?:.|\r|\n)*)$/,
+                tmpl: [{
+                    value: '<span class="char_name">$1</span>' +
+                        '<span class="title_text">$2</span>',
+                    result_type: ChunkType.OTHER
+                }],
+                for_book: BookType.XKCD,
+                where: Where.BOTH,
+                applicable_to: [ChunkType.PLAIN_TEXT]
+            }, {
+                // transcript description: [Text text text.]
+                re: /^\[.*\](?:<br>)?$/m,
+                tmpl: [{
+                    value: '<span class="transcript_description">$0</span>',
+                    result_type: ChunkType.OTHER
+                }],
+                for_book: BookType.XKCD,
+                where: Where.BOTH,
+                applicable_to: [ChunkType.PLAIN_TEXT]
+            }, {
+                // characters names: one or two word, then colon
+                re: /^\S+(?: \S+)?:/m,
                 tmpl: [{
                     value: '<span class="char_name">$0</span>',
                     result_type: ChunkType.OTHER
                 }],
+                for_book: BookType.BOTH,
                 where: Where.BOTH,
-                applicable_to: [ChunkType.LABELS_BLOCK]
+                applicable_to: (book == BookType.WHAT_IF) ?
+                    [ChunkType.LABELS_BLOCK] : [ChunkType.PLAIN_TEXT]
             }, {
                 // mistake: long number without &thinsp;
                 re: /\d{5,}/,
@@ -493,6 +550,7 @@
                     value: '<span class="mistake" title="' + Desc.SOLID_LONG_NUMBER + '">$0</span>',
                     result_type: ChunkType.OTHER
                 }],
+                for_book: BookType.BOTH,
                 where: Where.TRAN,
                 applicable_to: [ChunkType.PLAIN_TEXT, ChunkType.LABELS_BLOCK]
             }, {
@@ -502,6 +560,7 @@
                     value: '<span class="mistake" title="' + Desc.PERCENT_ENCODING + '">$0</span>',
                     result_type: ChunkType.OTHER
                 }],
+                for_book: BookType.BOTH,
                 where: Where.TRAN,
                 applicable_to: [ChunkType.PLAIN_TEXT, ChunkType.TO_URL_CHECK]
             }];
@@ -513,9 +572,10 @@
 
             var td_class = p.parent().parent().attr('class');
             substitutions.forEach(function(s){
-                var ok = (s.where == Where.BOTH) ||
+                var ok = (s.for_book == BookType.BOTH) || (s.for_book == book);
+                ok = ok && ((s.where == Where.BOTH) ||
                     (s.where == Where.ORIG && td_class == 'o') ||
-                    (s.where == Where.TRAN && td_class == 't');
+                    (s.where == Where.TRAN && td_class == 't'));
                 if (ok)
                     chunks = parse_by(chunks, s);
             });
@@ -611,13 +671,18 @@
     }
 
     var loc = w.location.href;
+
     if (loc.indexOf('http://notabenoid.com') == 0) {
         var new_loc = loc.replace(/^http:\/\/notabenoid.com/, 'http://notabenoid.org');
         window.location.replace(new_loc);
-    } else if (loc.indexOf('http://notabenoid.org/book/41531/') == 0 ||
-            loc.indexOf('http://notabenoid.org/book/45955/') == 0)
-    {
-        addMathJax();
+    } else if (loc.indexOf('http://notabenoid.org') == 0) {
+        loc = loc.substring('http://notabenoid.org'.length);
+        if (loc.indexOf('/book/41531/') != 0 && loc.indexOf('/book/45955/') != 0)
+            return;
+
+        if (loc.indexOf('/book/41531/') == 0)
+            addMathJax();
+
         addGlobalStyle(
             // hide .text and make .text_rendered looks like
             'p.text { display: none; }\n' +
@@ -675,10 +740,15 @@
                 'margin: 0 0 0 20px;\n' +
                 'line-indent: 1.5em\n' +
             '}\n' +
-            '.char_name      {\n'+
+            '.transcript_description {\n' +
                 'font-style: italic;\n' +
                 'color: #b8b8b8;\n' +
             '}\n' +
+            '.char_name {\n'+
+                'font-style: italic;\n' +
+                'color: #b8b8b8;\n' +
+            '}\n' +
+            '.title_text     { color: #7ab130; }\n' +
             '.md_image_url   { color: #b8b8b8; }\n' +
             '.md_image_title { color: #7ab130; }\n' +
             '.md_link_text   { color: #000000; }\n' +
