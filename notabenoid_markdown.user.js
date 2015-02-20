@@ -278,9 +278,12 @@
                 applicable_to: [ChunkType.PLAIN_TEXT]
             }, {
                 // quote with '>' (for example article question)
-                re: /^&gt;.*$/m,
+                re: /^(&gt;(?:.|\r|\n)*(?:<br>\r|<br>\n|<br>\r\n)?)+$/,
                 tmpl: [{
-                    value: '<span class="quote_block">$0</span>',
+                    value: function(matches){
+                        p_rendered.addClass('quote_block');
+                        return matches[0];
+                    },
                     result_type: ChunkType.CAN_CONTAIN_URL
                 }],
                 where: Where.BOTH,
@@ -657,7 +660,10 @@
             '#Tr tr:first-child .text_rendered {\n' +
                 'font-weight: bold;\n' +
             '}\n' +
-            '.quote_block    { color: #53830d; }\n' +
+            '.text_rendered.quote_block {\n' +
+                'background-color: #f0f8e6;\n' +
+                'color: #53830d;\n' +
+            '}\n' +
             '.labels_label   { color: #b8b8b8; }\n' +
             '.labels_block   {\n' +
                 'margin: 0 0 0 20px;\n' +
