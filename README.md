@@ -9,6 +9,16 @@ This is userscript for support the process of translating [What If?](http://what
 
 For Chrome/Chromium you can skip first step, download script and install it from local file. But then you lose ability to easy updating the script.
 
+## Syntax
+
+The script highlight subset of markdown formatting elements, render links and formulas; nothing unexpected here. Typical mistakes (for Russian texts) also highlighted in translated text.
+
+Also the script provide directive `render`, which now support only image embedding with the next syntax:
+
+```
+render: ![](http://example.com/image.png)
+```
+
 ## License
 
 Public domain. You free to use it as you need without any restrictions. No guarantees provided.
