@@ -3,7 +3,7 @@
 // @description Markdown parser for notabenoid.org service
 // @author Alexander Turenko <totktonada.ru@gmail.com>
 // @license Public Domain
-// @version 1.8
+// @version 1.9
 // @include http://notabenoid.com*
 // @include /^http://notabenoid\.org/book/(41531|45955)/.+/
 // ==/UserScript==
@@ -309,13 +309,13 @@
                 // [labels] text [/labels]
                 re: /(\[labels\]<br>)((?:.|\n|\r)*)(\[\/labels\])/,
                 tmpl: [{
-                    value: '<span class="labels_label">$1</span>',
+                    value: '<span class="labels_label">$1</span><div class="labels_block">',
                     result_type: ChunkType.OTHER
                 }, {
-                    value: '<div class="labels_block">$2</div>',
+                    value: '$2',
                     result_type: ChunkType.LABELS_BLOCK
                 }, {
-                    value: '<span class="labels_label">$3</span>',
+                    value: '</div><span class="labels_label">$3</span>',
                     result_type: ChunkType.OTHER
                 }],
                 for_book: BookType.WHAT_IF,
@@ -463,7 +463,7 @@
                 applicable_to: [ChunkType.PLAIN_TEXT, ChunkType.LABELS_BLOCK]
             }, {
                 // mistake: computer style quotes
-                re: /'[^']'|"[^"]"/,
+                re: /'[^']+'|"[^"]+"/,
                 tmpl: [{
                     value: '<span class="mistake" title="' + Desc.QUOTES + '">$0</span>',
                     result_type: ChunkType.OTHER
