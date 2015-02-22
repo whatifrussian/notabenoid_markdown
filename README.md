@@ -11,13 +11,17 @@ For Chrome/Chromium you can skip first step, download script and install it from
 
 ## Syntax
 
-The script highlight subset of markdown formatting elements, render links and formulas; nothing unexpected here. Typical mistakes (for Russian texts) also highlighted in translated text.
+The script highlight subset of markdown formatting elements, render links and formulas; nothing unexpected here. Typical mistakes (for Russian texts) also highlighted in translated text as well as few formatting peculiarity, which is specific for our projects (for example scene descriptions and character names).
 
 Also the script provide directive `render`, which now support only image embedding with the next syntax:
 
 ```
 render: ![](http://example.com/image.png)
 ```
+
+Note: For detailed list of all performed substitutions please check out `substitutions` variable in source code.
+
+The script perform redirect from old URLs with `.com` top level domain to the similar URLs with `.org`.
 
 ## License
 
