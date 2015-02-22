@@ -254,7 +254,7 @@
                 OTHER:           5
             });
 
-            substitutions = [{
+            var substitutions = [{
                 // displayed formula
                 re: /(!:^|[^\\])\${2}[^"]*(?:[^\\"])\${2}/,
                 tmpl: [{
