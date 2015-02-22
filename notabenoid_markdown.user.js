@@ -114,6 +114,11 @@
             return v && getType.toString.call(v) === '[object Function]';
         }
 
+        // via http://stackoverflow.com/a/7772724/1598057
+        function isString(s) {
+            return typeof(s) === 'string' || s instanceof String;
+        }
+
         // Replace '$0', '$1', '$2', ..., '$99' placeholders in string with some string values.
         // Note: Replaced all placeholders 'simultanously', so
         // str_format('$1 $2', [1: '$2', '$1']) must return '$2 $1'.
@@ -241,7 +246,8 @@
                 PERCENT_ENCODING: "Нечитаемый для человека URL (percent encoding для кирилицы)"
             });
 
-            var ChunkType = Object.freeze({
+            // Chunk types
+            var CT = Object.freeze({
                 // all substitutions applicable for plain text, except character names parsing
                 PLAIN_TEXT:      1,
                 // all substitutions, except s-s that has no sense for labels block
@@ -257,316 +263,353 @@
             var substitutions = [{
                 // displayed formula
                 re: /(!:^|[^\\])\${2}[^"]*(?:[^\\"])\${2}/,
-                tmpl: [{
-                    value: '<span class="formula_source">$0</span>' +
-                        '<span class="formula_rendered" title="$0">$0</span>',
-                    result_type: ChunkType.OTHER
-                }],
+                tmpl: [
+                    {v: '$0', e: 'span', class: 'formula_source'},
+                    {v: '$0', e: 'span', class: 'formula_rendered', title: '$0'}
+                ],
                 for_book: BookType.WHAT_IF,
                 where: Where.BOTH,
-                applicable_to: [ChunkType.PLAIN_TEXT, ChunkType.LABELS_BLOCK]
+                applicable_to: [CT.PLAIN_TEXT, CT.LABELS_BLOCK]
             }, {
                 // inline formula
                 re: /(!:^|[^\\])\$[^"]*(?:[^\\"])\$/,
-                tmpl: [{
-                    value: '<span class="inline_formula_source">$0</span>' +
-                        '<span class="inline_formula_rendered" title="$0">$0</span>',
-                    result_type: ChunkType.OTHER
-                }],
+                tmpl: [
+                    {v: '$0', e: 'span', class: 'inline_formula_source'},
+                    {v: '$0', e: 'span', class: 'inline_formula_rendered', title: '$0'}
+                ],
                 for_book: BookType.WHAT_IF,
                 where: Where.BOTH,
-                applicable_to: [ChunkType.PLAIN_TEXT, ChunkType.LABELS_BLOCK]
+                applicable_to: [CT.PLAIN_TEXT, CT.LABELS_BLOCK]
             }, {
                 // footnote fragment
                 re: /^(\[\^[0-9]{1,2}\]:)((?:.|\n|\r)*)$/,
-                tmpl: [{
-                    value: '<span class="footnote_anchor">$1</span>',
-                    result_type: ChunkType.OTHER
-                }, {
-                    value: function(matches){
+                tmpl: [
+                    {v: '$1', e: 'span', class: 'footnote_anchor'},
+                    {t: CT.PLAIN_TEXT, v: function(matches){
                         p_rendered.addClass('footnote_body');
                         return matches[2];
-                    },
-                    result_type: ChunkType.PLAIN_TEXT
-                }],
+                    }}
+                ],
                 for_book: BookType.WHAT_IF,
                 where: Where.BOTH,
-                applicable_to: [ChunkType.PLAIN_TEXT]
+                applicable_to: [CT.PLAIN_TEXT]
             }, {
                 // quote with '>' (for example article question)
                 re: /^(&gt;(?:.|\r|\n)*(?:<br>\r|<br>\n|<br>\r\n)?)+$/,
-                tmpl: [{
-                    value: function(matches){
+                tmpl: [
+                    {t: CT.CAN_CONTAIN_URL, v: function(matches){
                         p.parent().addClass('quote_block');
                         return matches[0];
-                    },
-                    result_type: ChunkType.CAN_CONTAIN_URL
-                }],
+                    }}
+                ],
                 for_book: BookType.WHAT_IF,
                 where: Where.BOTH,
-                applicable_to: [ChunkType.PLAIN_TEXT]
+                applicable_to: [CT.PLAIN_TEXT]
             }, {
                 // [labels] text [/labels]
                 re: /(\[labels\]<br>)((?:.|\n|\r)*)(\[\/labels\])/,
-                tmpl: [{
-                    value: '<span class="labels_label">$1</span><div class="labels_block">',
-                    result_type: ChunkType.OTHER
-                }, {
-                    value: '$2',
-                    result_type: ChunkType.LABELS_BLOCK
-                }, {
-                    value: '</div><span class="labels_label">$3</span>',
-                    result_type: ChunkType.OTHER
-                }],
+                tmpl: [
+                    {v: '$1', e: 'span', class: 'labels_label'},
+                    {v: '$2', e: 'div', class: 'labels_block', t: CT.LABELS_BLOCK},
+                    {v: '$3', e: 'span', class: 'labels_label'}
+                ],
                 for_book: BookType.WHAT_IF,
                 where: Where.BOTH,
-                applicable_to: [ChunkType.PLAIN_TEXT]
+                applicable_to: [CT.PLAIN_TEXT]
             }, {
                 // embed image: render: ![](url)
                 re: /^render:\s+!\[\]\(([^\)]+)\)/m,
-                tmpl: [{
-                    value: '<span class="rendered_md_src">$0</span>',
-                    result_type: ChunkType.CAN_CONTAIN_URL
-                }, {
-                    value: '<img src="$1"/>',
-                    result_type: ChunkType.OTHER
-                }],
+                tmpl: [
+                    {v: '$0', e: 'span', class: 'rendered_md_src', t: CT.CAN_CONTAIN_URL},
+                    {e: 'img', src: '$1'}
+                ],
                 for_book: BookType.BOTH,
                 where: Where.BOTH,
-                applicable_to: [ChunkType.PLAIN_TEXT]
+                applicable_to: [CT.PLAIN_TEXT]
             }, {
                 // md image: ![](url "title")
-                re: /!\[\]\((\S+)(\s+)("(?:[^"]|\\")*[^\\]")\)/,
-                tmpl: [{
-                    value: '![]<span class="md_image_url">($1$2' +
-                        '<span class="md_image_title">$3</span>)</span>',
-                    result_type: ChunkType.TO_URL_CHECK
-                }],
+                re: /!\[\]\((\S+)(\s+)"((?:[^"]|\\")*[^\\])"\)/,
+                tmpl: [
+                    {v: '![]'},
+                    {e: 'span', class: 'md_image_url', v: [
+                        {v: '('},
+                        {v: '$1$2', t: CT.TO_URL_CHECK},
+                        {v: '"'},
+                        {v: '$3', e: 'span', class: 'md_image_title', t: CT.PLAIN_TEXT},
+                        {v: '"'},
+                        {v: ')'}]
+                    }
+                ],
                 for_book: BookType.WHAT_IF,
                 where: Where.BOTH,
-                applicable_to: [ChunkType.PLAIN_TEXT]
+                applicable_to: [CT.PLAIN_TEXT]
             }, {
                 // md link: [text](url "title")
                 re: /\[([^\]]*)\]\((\S+)(\s+)("(?:[^"]|\\")*[^\\]")\)/,
                 tmpl: [{
                     value: '<span class="md_link_url">[<a href="$2" class="md_link_text">',
-                    result_type: ChunkType.OTHER
+                    result_type: CT.OTHER
                 }, {
                     value: '$1',
-                    result_type: ChunkType.PLAIN_TEXT
+                    result_type: CT.PLAIN_TEXT
                 }, {
                     value: '</a>]($2$3' +
                         '<span class="md_link_title">$4</span>)</span>',
-                    result_type: ChunkType.TO_URL_CHECK
+                    result_type: CT.TO_URL_CHECK
                 }],
                 for_book: BookType.WHAT_IF,
                 where: Where.BOTH,
-                applicable_to: [ChunkType.PLAIN_TEXT]
+                applicable_to: [CT.PLAIN_TEXT]
             }, {
                 // md link: [text](url)
                 re: /\[([^\]]*)\]\((\S+)\)/,
                 tmpl: [{
                     value: '<span class="md_link_url">[<a href="$2" class="md_link_text">',
-                    result_type: ChunkType.OTHER
+                    result_type: CT.OTHER
                 }, {
                     value: '$1',
-                    result_type: ChunkType.PLAIN_TEXT
+                    result_type: CT.PLAIN_TEXT
                 }, {
                     value: '</a>]($2)</span>',
-                    result_type: ChunkType.TO_URL_CHECK
+                    result_type: CT.TO_URL_CHECK
                 }],
                 for_book: BookType.WHAT_IF,
                 where: Where.BOTH,
-                applicable_to: [ChunkType.PLAIN_TEXT]
+                applicable_to: [CT.PLAIN_TEXT]
             }, {
                 // mistake: 20 % → 20%
                 re: /\d(?: |&amp;thinsp;|&amp;nbsp;)%/,
                 tmpl: [{
                     value: '<span class="mistake" title="' + Desc.SPACE_PERCENT + '">$0</span>',
-                    result_type: ChunkType.OTHER
+                    result_type: CT.OTHER
                 }],
                 for_book: BookType.BOTH,
                 where: Where.TRAN,
-                applicable_to: [ChunkType.PLAIN_TEXT, ChunkType.LABELS_BLOCK]
+                applicable_to: [CT.PLAIN_TEXT, CT.LABELS_BLOCK]
             }, {
                 // special sequences: '&nbsp;' and '&thinsp;'
                 re: /&amp;(nbsp|thinsp);/,
                 tmpl: [{
                     value: '<span class="special_seq">&amp;$1;</span>',
-                    result_type: ChunkType.OTHER
+                    result_type: CT.OTHER
                 }],
                 for_book: BookType.WHAT_IF,
                 where: Where.BOTH,
-                applicable_to: [ChunkType.PLAIN_TEXT, ChunkType.LABELS_BLOCK]
+                applicable_to: [CT.PLAIN_TEXT, CT.LABELS_BLOCK]
             }, {
                 // urls
                 re: new RegExp(url_re),
                 tmpl: [{
                     value: '<a href="$0" class="any_link_url">',
-                    result_type: ChunkType.OTHER
+                    result_type: CT.OTHER
                 }, {
                     value: '$0</a>',
-                    result_type: ChunkType.TO_URL_CHECK
+                    result_type: CT.TO_URL_CHECK
                 }],
                 for_book: BookType.BOTH,
                 where: Where.BOTH,
-                applicable_to: [ChunkType.PLAIN_TEXT, ChunkType.CAN_CONTAIN_URL, ChunkType.LABELS_BLOCK]
+                applicable_to: [CT.PLAIN_TEXT, CT.CAN_CONTAIN_URL, CT.LABELS_BLOCK]
             }, {
                 // mistake: 'text.[^1]' or 'text[^1]?'
                 re: /[.,;:— ]\[\^[0-9]+\]|\[\^[0-9]+\][?!…]/,
                 tmpl: [{
                     value: '<span class="mistake" title="' + Desc.FOOTNOTE_PUNCTUM + '">$0</span>',
-                    result_type: ChunkType.OTHER
+                    result_type: CT.OTHER
                 }],
                 for_book: BookType.WHAT_IF,
                 where: Where.TRAN,
-                applicable_to: [ChunkType.PLAIN_TEXT]
+                applicable_to: [CT.PLAIN_TEXT]
             }, {
                 // footnote reference
                 re: /\[\^[0-9]{1,2}\]/,
                 tmpl: [{
                     value: '<sup class="footnote_ref">$0</sup>',
-                    result_type: ChunkType.OTHER
+                    result_type: CT.OTHER
                 }],
                 for_book: BookType.WHAT_IF,
                 where: Where.BOTH,
-                applicable_to: [ChunkType.PLAIN_TEXT]
+                applicable_to: [CT.PLAIN_TEXT]
             }, {
                 // mistake: ... → …
                 re: /\.{3}/,
                 tmpl: [{
                     value: '<span class="mistake" title="' + Desc.DOTS + '">$0</span>',
-                    result_type: ChunkType.OTHER
+                    result_type: CT.OTHER
                 }],
                 for_book: BookType.BOTH,
                 where: Where.TRAN,
-                applicable_to: [ChunkType.PLAIN_TEXT, ChunkType.LABELS_BLOCK]
+                applicable_to: [CT.PLAIN_TEXT, CT.LABELS_BLOCK]
             }, {
                 // mistake: {hyphen, en dash} → em dash
                 re: /\S [-–] \S|^[-–] \S/,
                 tmpl: [{
                     value: '<span class="mistake" title="' + Desc.NOT_EM_DASH + '">$0</span>',
-                    result_type: ChunkType.OTHER
+                    result_type: CT.OTHER
                 }],
                 for_book: BookType.BOTH,
                 where: Where.TRAN,
-                applicable_to: [ChunkType.PLAIN_TEXT, ChunkType.LABELS_BLOCK]
+                applicable_to: [CT.PLAIN_TEXT, CT.LABELS_BLOCK]
             }, {
                 // mistake: {hyphen, em dash} → en dash
                 re: /\d[-—]\d/,
                 tmpl: [{
                     value: '<span class="mistake" title="' + Desc.NOT_EN_DASH + '">$0</span>',
-                    result_type: ChunkType.OTHER
+                    result_type: CT.OTHER
                 }],
                 for_book: BookType.BOTH,
                 where: Where.TRAN,
-                applicable_to: [ChunkType.PLAIN_TEXT, ChunkType.LABELS_BLOCK]
+                applicable_to: [CT.PLAIN_TEXT, CT.LABELS_BLOCK]
             }, {
                 // mistake: computer style quotes
                 re: /'[^']+'|"[^"]+"/,
                 tmpl: [{
                     value: '<span class="mistake" title="' + Desc.QUOTES + '">$0</span>',
-                    result_type: ChunkType.OTHER
+                    result_type: CT.OTHER
                 }],
                 for_book: BookType.BOTH,
                 where: Where.TRAN,
-                applicable_to: [ChunkType.PLAIN_TEXT, ChunkType.LABELS_BLOCK]
+                applicable_to: [CT.PLAIN_TEXT, CT.LABELS_BLOCK]
             }, {
                 // mistake: computer style apostrophe
                 re: /'/,
                 tmpl: [{
                     value: '<span class="mistake" title="' + Desc.APOSTROPHE + '">$0</span>',
-                    result_type: ChunkType.OTHER
+                    result_type: CT.OTHER
                 }],
                 for_book: BookType.BOTH,
                 where: Where.TRAN,
-                applicable_to: [ChunkType.PLAIN_TEXT, ChunkType.LABELS_BLOCK]
+                applicable_to: [CT.PLAIN_TEXT, CT.LABELS_BLOCK]
             }, {
                 // mistake: no space after abbreviation word
                 re: new RegExp('[' + letters_re + ']\\.[' + letters_re + ']'),
                 tmpl: [{
                     value: '<span class="mistake" title="' + Desc.ABBR_SPACE + '">$0</span>',
-                    result_type: ChunkType.OTHER
+                    result_type: CT.OTHER
                 }],
                 for_book: BookType.BOTH,
                 where: Where.TRAN,
-                applicable_to: [ChunkType.PLAIN_TEXT, ChunkType.LABELS_BLOCK]
+                applicable_to: [CT.PLAIN_TEXT, CT.LABELS_BLOCK]
             }, {
                 // **bold**
                 re: /(!:^|[^\\])\*\*[^*]+\*\*/,
                 tmpl: [{
                     value: '<strong>$0</strong>',
-                    result_type: ChunkType.OTHER
+                    result_type: CT.OTHER
                 }],
                 for_book: BookType.BOTH,
                 where: Where.BOTH,
-                applicable_to: [ChunkType.PLAIN_TEXT, ChunkType.LABELS_BLOCK]
+                applicable_to: [CT.PLAIN_TEXT, CT.LABELS_BLOCK]
             }, {
                 // *italic*
                 re: /(!:^|[^\\])\*[^*]+\*/,
                 tmpl: [{
                     value: '<em>$0</em>',
-                    result_type: ChunkType.OTHER
+                    result_type: CT.OTHER
                 }],
                 for_book: BookType.BOTH,
                 where: Where.BOTH,
-                applicable_to: [ChunkType.PLAIN_TEXT, ChunkType.LABELS_BLOCK]
+                applicable_to: [CT.PLAIN_TEXT, CT.LABELS_BLOCK]
             }, {
                 // fragment with title text
                 re: /^(Title(?: text|-текст):)((?:.|\r|\n)*)$/,
                 tmpl: [{
                     value: '<span class="char_name">$1</span>' +
                         '<span class="title_text">$2</span>',
-                    result_type: ChunkType.OTHER
+                    result_type: CT.OTHER
                 }],
                 for_book: BookType.XKCD,
                 where: Where.BOTH,
-                applicable_to: [ChunkType.PLAIN_TEXT]
+                applicable_to: [CT.PLAIN_TEXT]
             }, {
                 // transcript description: [Text text text.]
                 re: /^\[.*\](?:<br>)?$/m,
                 tmpl: [{
                     value: '<span class="transcript_description">$0</span>',
-                    result_type: ChunkType.OTHER
+                    result_type: CT.OTHER
                 }],
                 for_book: BookType.XKCD,
                 where: Where.BOTH,
-                applicable_to: [ChunkType.PLAIN_TEXT]
+                applicable_to: [CT.PLAIN_TEXT]
             }, {
                 // characters names: one or two word, then colon
                 re: /^\S+(?: \S+)?:/m,
                 tmpl: [{
                     value: '<span class="char_name">$0</span>',
-                    result_type: ChunkType.OTHER
+                    result_type: CT.OTHER
                 }],
                 for_book: BookType.BOTH,
                 where: Where.BOTH,
                 applicable_to: (book == BookType.WHAT_IF) ?
-                    [ChunkType.LABELS_BLOCK] : [ChunkType.PLAIN_TEXT]
+                    [CT.LABELS_BLOCK] : [CT.PLAIN_TEXT]
             }, {
                 // mistake: long number without &thinsp;
                 re: /\d{5,}/,
                 tmpl: [{
                     value: '<span class="mistake" title="' + Desc.SOLID_LONG_NUMBER + '">$0</span>',
-                    result_type: ChunkType.OTHER
+                    result_type: CT.OTHER
                 }],
                 for_book: BookType.BOTH,
                 where: Where.TRAN,
-                applicable_to: [ChunkType.PLAIN_TEXT, ChunkType.LABELS_BLOCK]
+                applicable_to: [CT.PLAIN_TEXT, CT.LABELS_BLOCK]
             }, {
                 // mistake: cyrillic letters percent encoded in URL
                 re: /(?:%D0%[9AB][0-9ABCDEF]|%D1%[8][0-9ABCDEF]|%D0%81|%D1%91)+/,
                 tmpl: [{
                     value: '<span class="mistake" title="' + Desc.PERCENT_ENCODING + '">$0</span>',
-                    result_type: ChunkType.OTHER
+                    result_type: CT.OTHER
                 }],
                 for_book: BookType.BOTH,
                 where: Where.TRAN,
-                applicable_to: [ChunkType.PLAIN_TEXT, ChunkType.TO_URL_CHECK]
+                applicable_to: [CT.PLAIN_TEXT, CT.TO_URL_CHECK]
             }];
 
+            var uncover_tmpl = function(items){
+                var res = [];
+                items.forEach(function(item){
+                    // oldstyle substitution declaration
+                    if ('value' in item && 'result_type' in item) {
+                        res.push(item);
+                        return;
+                    }
+
+                    // CT.OTHER if the type is omited
+                    var value_type = ('t' in item) ? item['t'] : CT.OTHER;
+
+                    var add_value = function(value){
+                        if (isString(value) || isFunction(value)) {
+                            res.push({value: value, result_type: value_type});
+                        } else {
+                            value.forEach(function(subitem){
+                                // the parent type if the type is omited
+                                subitem['t'] = ('t' in subitem) ? subitem['t'] : value_type;
+                                uncover_tmpl([subitem]).forEach(function(u_subitem){
+                                    res.push(u_subitem);
+                                });
+                            });
+                        }
+                    };
+
+                    if ('e' in item) {
+                        var open_tag = '<' + item['e'] +
+                            (('class' in item) ? (' class="' + item['class'] + '"') : '') +
+                            (('title' in item) ? (' title="' + item['title'] + '"') : '') +
+                            (('src'   in item) ? (' src="'   + item['src']   + '"') : '') +
+                            '>';
+                        res.push({value: open_tag, result_type: CT.OTHER});
+                        if ('v' in item)
+                            add_value(item['v']);
+                        if (item['e'] == 'span' || item['e'] == 'div')
+                            res.push({value: '</' + item['e'] + '>', result_type: CT.OTHER});
+                    } else {
+                        if ('v' in item)
+                            add_value(item['v']);
+                    }
+                });
+                return res;
+            };
+
             var chunks = [{
-                type: ChunkType.PLAIN_TEXT,
+                type: CT.PLAIN_TEXT,
                 value: p.html()
             }];
 
@@ -576,8 +619,11 @@
                 ok = ok && ((s.where == Where.BOTH) ||
                     (s.where == Where.ORIG && td_class == 'o') ||
                     (s.where == Where.TRAN && td_class == 't'));
-                if (ok)
-                    chunks = parse_by(chunks, s);
+                if (ok) {
+                    var us = s;
+                    us.tmpl = uncover_tmpl(s.tmpl);
+                    chunks = parse_by(chunks, us);
+                }
             });
 
             body = "";
