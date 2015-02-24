@@ -133,6 +133,56 @@
             return 'tagName' in jQNode[0] ? jQNode[0].tagName.toLowerCase() : null;
         }
 
+        // Return template in the form {'value': smth, 'result_type': smth}.
+        // Uncover all element declarations and flatten substitution.
+        // Note: For any tags except <img> added close tag.
+        function preprocess_tmpl(tag_type, default_type, items) {
+            var res = [];
+            items.forEach(function(item){
+                // default_type if the type is omited
+                var value_type = ('t' in item) ? item['t'] : default_type;
+
+                var add_value = function(value){
+                    if (isString(value) || isFunction(value)) {
+                        res.push({value: value, result_type: value_type});
+                    } else {
+                        value.forEach(function(subitem){
+                            // the parent type if the type is omited
+                            subitem['t'] = ('t' in subitem) ? subitem['t'] : value_type;
+                            preprocess_tmpl(tag_type, default_type, [subitem]).forEach(function(p_subitem){
+                                res.push(p_subitem);
+                            });
+                        });
+                    }
+                };
+
+                if ('e' in item) {
+                    var open_tag = '<' + item['e'];
+                    for (var f in item) {
+                        if (f != 'v' && f != 'e' && f != 't')
+                            open_tag += ' ' + f + '="' + item[f] + '"';
+                    }
+                    open_tag += '>';
+                    res.push({value: open_tag, result_type: tag_type});
+                    if ('v' in item)
+                        add_value(item['v']);
+                    if (item['e'] != 'img')
+                        res.push({value: '</' + item['e'] + '>', result_type: tag_type});
+                } else {
+                    if ('v' in item)
+                        add_value(item['v']);
+                }
+            });
+            return res;
+        };
+
+        function preprocess_substitutions(tag_type, default_type, substitutions) {
+            substitutions.forEach(function(s){
+                s.tmpl = preprocess_tmpl(tag_type, default_type, s.tmpl);
+            });
+            return substitutions;
+        }
+
         /* About (!:x) notation
          * ====================
          *
@@ -167,8 +217,9 @@
                 var matches;
                 var re = s.re;
 
-                // TODO: make it looks like MyRegExp class
-                // for make non-capturing group not affecting idx
+                // TODO: Make it looks like MyRegExp class
+                // for make non-capturing group not affecting idx.
+                // And give back standard positive lookbehind syntax.
                 var start_non_capturing = (re.source.indexOf('(!:') == 0);
                 if (start_non_capturing) {
                     var new_source = re.source.replace(/^\(!:/, '(');
@@ -260,7 +311,7 @@
                 OTHER:           5
             });
 
-            var substitutions = [{
+            var substitutions = preprocess_substitutions(CT.OTHER, CT.OTHER, [{
                 // displayed formula
                 re: /(!:^|[^\\])\${2}[^"]*(?:[^\\"])\${2}/,
                 tmpl: [
@@ -544,47 +595,7 @@
                 for_book: BookType.BOTH,
                 where: Where.TRAN,
                 applicable_to: [CT.PLAIN_TEXT, CT.TO_URL_CHECK]
-            }];
-
-            var uncover_tmpl = function(items){
-                var res = [];
-                items.forEach(function(item){
-                    // CT.OTHER if the type is omited
-                    var value_type = ('t' in item) ? item['t'] : CT.OTHER;
-
-                    var add_value = function(value){
-                        if (isString(value) || isFunction(value)) {
-                            res.push({value: value, result_type: value_type});
-                        } else {
-                            value.forEach(function(subitem){
-                                // the parent type if the type is omited
-                                subitem['t'] = ('t' in subitem) ? subitem['t'] : value_type;
-                                uncover_tmpl([subitem]).forEach(function(u_subitem){
-                                    res.push(u_subitem);
-                                });
-                            });
-                        }
-                    };
-
-                    if ('e' in item) {
-                        var open_tag = '<' + item['e'];
-                        for (var f in item) {
-                            if (f != 'v' && f != 'e' && f != 't')
-                                open_tag += ' ' + f + '="' + item[f] + '"';
-                        }
-                        open_tag += '>';
-                        res.push({value: open_tag, result_type: CT.OTHER});
-                        if ('v' in item)
-                            add_value(item['v']);
-                        if (item['e'] != 'img')
-                            res.push({value: '</' + item['e'] + '>', result_type: CT.OTHER});
-                    } else {
-                        if ('v' in item)
-                            add_value(item['v']);
-                    }
-                });
-                return res;
-            };
+            }]);
 
             var chunks = [{
                 type: CT.PLAIN_TEXT,
@@ -597,11 +608,8 @@
                 ok = ok && ((s.where == Where.BOTH) ||
                     (s.where == Where.ORIG && td_class == 'o') ||
                     (s.where == Where.TRAN && td_class == 't'));
-                if (ok) {
-                    var us = s;
-                    us.tmpl = uncover_tmpl(s.tmpl);
-                    chunks = parse_by(chunks, us);
-                }
+                if (ok)
+                    chunks = parse_by(chunks, s);
             });
 
             body = "";
