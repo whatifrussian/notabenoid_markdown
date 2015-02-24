@@ -295,9 +295,9 @@
                 applicable_to: [CT.PLAIN_TEXT]
             }, {
                 // quote with '>' (for example article question)
-                re: /^(&gt;(?:.|\r|\n)*(?:<br>\r|<br>\n|<br>\r\n)?)+$/,
+                re: /^(?:&gt;(?:.|\r|\n)*(?:<br>\r|<br>\n|<br>\r\n)?)+$/,
                 tmpl: [
-                    {t: CT.CAN_CONTAIN_URL, v: function(matches){
+                    {t: CT.PLAIN_TEXT, v: function(matches){
                         p.parent().addClass('quote_block');
                         return matches[0];
                     }}
@@ -334,9 +334,11 @@
                     {e: 'span', class: 'md_image_url', v: [
                         {v: '('},
                         {v: '$1$2', t: CT.TO_URL_CHECK},
-                        {v: '"'},
-                        {v: '$3', e: 'span', class: 'md_image_title', t: CT.PLAIN_TEXT},
-                        {v: '"'},
+                        {e: 'span', class: 'md_image_title', v: [
+                            {v: '"'},
+                            {v: '$3', t: CT.PLAIN_TEXT},
+                            {v: '"'}
+                        ]},
                         {v: ')'}]
                     }
                 ],
@@ -345,198 +347,181 @@
                 applicable_to: [CT.PLAIN_TEXT]
             }, {
                 // md link: [text](url "title")
-                re: /\[([^\]]*)\]\((\S+)(\s+)("(?:[^"]|\\")*[^\\]")\)/,
-                tmpl: [{
-                    value: '<span class="md_link_url">[<a href="$2" class="md_link_text">',
-                    result_type: CT.OTHER
-                }, {
-                    value: '$1',
-                    result_type: CT.PLAIN_TEXT
-                }, {
-                    value: '</a>]($2$3' +
-                        '<span class="md_link_title">$4</span>)</span>',
-                    result_type: CT.TO_URL_CHECK
-                }],
+                re: /\[([^\]]*)\]\((\S+)(\s+)"((?:[^"]|\\")*[^\\])"\)/,
+                tmpl: [
+                    {e: 'span', class: 'md_link_url', v: [
+                        {v: '['},
+                        {v: '$1', e: 'a', href: '$2', class: 'md_link_text', t: CT.PLAIN_TEXT},
+                        {v: ']('},
+                        {v: '$2$3', t: CT.TO_URL_CHECK},
+                        {e: 'span', class: 'md_link_title', v: [
+                            {v: '"'},
+                            {v: '$4', t: CT.PLAIN_TEXT},
+                            {v: '"'}
+                        ]},
+                        {v: ')'}
+                    ]}
+                ],
                 for_book: BookType.WHAT_IF,
                 where: Where.BOTH,
                 applicable_to: [CT.PLAIN_TEXT]
             }, {
                 // md link: [text](url)
                 re: /\[([^\]]*)\]\((\S+)\)/,
-                tmpl: [{
-                    value: '<span class="md_link_url">[<a href="$2" class="md_link_text">',
-                    result_type: CT.OTHER
-                }, {
-                    value: '$1',
-                    result_type: CT.PLAIN_TEXT
-                }, {
-                    value: '</a>]($2)</span>',
-                    result_type: CT.TO_URL_CHECK
-                }],
+                tmpl: [
+                    {e: 'span', class: 'md_link_url', v: [
+                        {v: '['},
+                        {v: '$1', e: 'a', href: '$2', class: 'md_link_text', t: CT.PLAIN_TEXT},
+                        {v: ']('},
+                        {v: '$2', t: CT.TO_URL_CHECK},
+                        {v: ')'}
+                    ]}
+                ],
                 for_book: BookType.WHAT_IF,
                 where: Where.BOTH,
                 applicable_to: [CT.PLAIN_TEXT]
             }, {
                 // mistake: 20 % → 20%
                 re: /\d(?: |&amp;thinsp;|&amp;nbsp;)%/,
-                tmpl: [{
-                    value: '<span class="mistake" title="' + Desc.SPACE_PERCENT + '">$0</span>',
-                    result_type: CT.OTHER
-                }],
+                tmpl: [
+                    {v: '$0', e: 'span', class: 'mistake', title: Desc.SPACE_PERCENT}
+                ],
                 for_book: BookType.BOTH,
                 where: Where.TRAN,
                 applicable_to: [CT.PLAIN_TEXT, CT.LABELS_BLOCK]
             }, {
                 // special sequences: '&nbsp;' and '&thinsp;'
                 re: /&amp;(nbsp|thinsp);/,
-                tmpl: [{
-                    value: '<span class="special_seq">&amp;$1;</span>',
-                    result_type: CT.OTHER
-                }],
+                tmpl: [
+                    {v: '&amp;$1;', e: 'span', class: 'special_seq'}
+                ],
                 for_book: BookType.WHAT_IF,
                 where: Where.BOTH,
                 applicable_to: [CT.PLAIN_TEXT, CT.LABELS_BLOCK]
             }, {
                 // urls
                 re: new RegExp(url_re),
-                tmpl: [{
-                    value: '<a href="$0" class="any_link_url">',
-                    result_type: CT.OTHER
-                }, {
-                    value: '$0</a>',
-                    result_type: CT.TO_URL_CHECK
-                }],
+                tmpl: [
+                    {v: '$0', e: 'a', href: '$0', class: 'any_link_url', t: CT.TO_URL_CHECK}
+                ],
                 for_book: BookType.BOTH,
                 where: Where.BOTH,
                 applicable_to: [CT.PLAIN_TEXT, CT.CAN_CONTAIN_URL, CT.LABELS_BLOCK]
             }, {
                 // mistake: 'text.[^1]' or 'text[^1]?'
                 re: /[.,;:— ]\[\^[0-9]+\]|\[\^[0-9]+\][?!…]/,
-                tmpl: [{
-                    value: '<span class="mistake" title="' + Desc.FOOTNOTE_PUNCTUM + '">$0</span>',
-                    result_type: CT.OTHER
-                }],
+                tmpl: [
+                    {v: '$0', e: 'span', class: 'mistake', title: Desc.FOOTNOTE_PUNCTUM}
+                ],
                 for_book: BookType.WHAT_IF,
                 where: Where.TRAN,
                 applicable_to: [CT.PLAIN_TEXT]
             }, {
                 // footnote reference
                 re: /\[\^[0-9]{1,2}\]/,
-                tmpl: [{
-                    value: '<sup class="footnote_ref">$0</sup>',
-                    result_type: CT.OTHER
-                }],
+                tmpl: [
+                    {v: '$0', e: 'sup', class: 'footnote_ref'}
+                ],
                 for_book: BookType.WHAT_IF,
                 where: Where.BOTH,
                 applicable_to: [CT.PLAIN_TEXT]
             }, {
                 // mistake: ... → …
                 re: /\.{3}/,
-                tmpl: [{
-                    value: '<span class="mistake" title="' + Desc.DOTS + '">$0</span>',
-                    result_type: CT.OTHER
-                }],
+                tmpl: [
+                    {v: '$0', e: 'span', class: 'mistake', title: Desc.DOTS}
+                ],
                 for_book: BookType.BOTH,
                 where: Where.TRAN,
                 applicable_to: [CT.PLAIN_TEXT, CT.LABELS_BLOCK]
             }, {
                 // mistake: {hyphen, en dash} → em dash
                 re: /\S [-–] \S|^[-–] \S/,
-                tmpl: [{
-                    value: '<span class="mistake" title="' + Desc.NOT_EM_DASH + '">$0</span>',
-                    result_type: CT.OTHER
-                }],
+                tmpl: [
+                    {v: '$0', e: 'span', class: 'mistake', title: Desc.NOT_EM_DASH}
+                ],
                 for_book: BookType.BOTH,
                 where: Where.TRAN,
                 applicable_to: [CT.PLAIN_TEXT, CT.LABELS_BLOCK]
             }, {
                 // mistake: {hyphen, em dash} → en dash
                 re: /\d[-—]\d/,
-                tmpl: [{
-                    value: '<span class="mistake" title="' + Desc.NOT_EN_DASH + '">$0</span>',
-                    result_type: CT.OTHER
-                }],
+                tmpl: [
+                    {v: '$0', e: 'span', class: 'mistake', title: Desc.NOT_EN_DASH}
+                ],
                 for_book: BookType.BOTH,
                 where: Where.TRAN,
                 applicable_to: [CT.PLAIN_TEXT, CT.LABELS_BLOCK]
             }, {
                 // mistake: computer style quotes
                 re: /'[^']+'|"[^"]+"/,
-                tmpl: [{
-                    value: '<span class="mistake" title="' + Desc.QUOTES + '">$0</span>',
-                    result_type: CT.OTHER
-                }],
+                tmpl: [
+                    {v: '$0', e: 'span', class: 'mistake', title: Desc.QUOTES}
+                ],
                 for_book: BookType.BOTH,
                 where: Where.TRAN,
                 applicable_to: [CT.PLAIN_TEXT, CT.LABELS_BLOCK]
             }, {
                 // mistake: computer style apostrophe
-                re: /'/,
-                tmpl: [{
-                    value: '<span class="mistake" title="' + Desc.APOSTROPHE + '">$0</span>',
-                    result_type: CT.OTHER
-                }],
+                re: /\S'\S/,
+                tmpl: [
+                    {v: '$0', e: 'span', class: 'mistake', title: Desc.APOSTROPHE}
+                ],
                 for_book: BookType.BOTH,
                 where: Where.TRAN,
                 applicable_to: [CT.PLAIN_TEXT, CT.LABELS_BLOCK]
             }, {
                 // mistake: no space after abbreviation word
                 re: new RegExp('[' + letters_re + ']\\.[' + letters_re + ']'),
-                tmpl: [{
-                    value: '<span class="mistake" title="' + Desc.ABBR_SPACE + '">$0</span>',
-                    result_type: CT.OTHER
-                }],
+                tmpl: [
+                    {v: '$0', e: 'span', class: 'mistake', title: Desc.ABBR_SPACE}
+                ],
                 for_book: BookType.BOTH,
                 where: Where.TRAN,
                 applicable_to: [CT.PLAIN_TEXT, CT.LABELS_BLOCK]
             }, {
                 // **bold**
                 re: /(!:^|[^\\])\*\*[^*]+\*\*/,
-                tmpl: [{
-                    value: '<strong>$0</strong>',
-                    result_type: CT.OTHER
-                }],
+                tmpl: [
+                    {v: '$0', e: 'strong'}
+                ],
                 for_book: BookType.BOTH,
                 where: Where.BOTH,
                 applicable_to: [CT.PLAIN_TEXT, CT.LABELS_BLOCK]
             }, {
                 // *italic*
                 re: /(!:^|[^\\])\*[^*]+\*/,
-                tmpl: [{
-                    value: '<em>$0</em>',
-                    result_type: CT.OTHER
-                }],
+                tmpl: [
+                    {v: '$0', e: 'em'}
+                ],
                 for_book: BookType.BOTH,
                 where: Where.BOTH,
                 applicable_to: [CT.PLAIN_TEXT, CT.LABELS_BLOCK]
             }, {
                 // fragment with title text
                 re: /^(Title(?: text|-текст):)((?:.|\r|\n)*)$/,
-                tmpl: [{
-                    value: '<span class="char_name">$1</span>' +
-                        '<span class="title_text">$2</span>',
-                    result_type: CT.OTHER
-                }],
+                tmpl: [
+                    {v: '$1', e: 'span', class: 'char_name'},
+                    {v: '$2', e: 'span', class: 'title_text'}
+                ],
                 for_book: BookType.XKCD,
                 where: Where.BOTH,
                 applicable_to: [CT.PLAIN_TEXT]
             }, {
                 // transcript description: [Text text text.]
                 re: /^\[.*\](?:<br>)?$/m,
-                tmpl: [{
-                    value: '<span class="transcript_description">$0</span>',
-                    result_type: CT.OTHER
-                }],
+                tmpl: [
+                    {v: '$0', e: 'span', class: 'transcript_description'}
+                ],
                 for_book: BookType.XKCD,
                 where: Where.BOTH,
                 applicable_to: [CT.PLAIN_TEXT]
             }, {
                 // characters names: one or two word, then colon
                 re: /^\S+(?: \S+)?:/m,
-                tmpl: [{
-                    value: '<span class="char_name">$0</span>',
-                    result_type: CT.OTHER
-                }],
+                tmpl: [
+                    {v: '$0', e: 'span', class: 'char_name'}
+                ],
                 for_book: BookType.BOTH,
                 where: Where.BOTH,
                 applicable_to: (book == BookType.WHAT_IF) ?
@@ -544,20 +529,18 @@
             }, {
                 // mistake: long number without &thinsp;
                 re: /\d{5,}/,
-                tmpl: [{
-                    value: '<span class="mistake" title="' + Desc.SOLID_LONG_NUMBER + '">$0</span>',
-                    result_type: CT.OTHER
-                }],
+                tmpl: [
+                    {v: '$0', e: 'span', class: 'mistake', title: Desc.SOLID_LONG_NUMBER}
+                ],
                 for_book: BookType.BOTH,
                 where: Where.TRAN,
                 applicable_to: [CT.PLAIN_TEXT, CT.LABELS_BLOCK]
             }, {
                 // mistake: cyrillic letters percent encoded in URL
                 re: /(?:%D0%[9AB][0-9ABCDEF]|%D1%[8][0-9ABCDEF]|%D0%81|%D1%91)+/,
-                tmpl: [{
-                    value: '<span class="mistake" title="' + Desc.PERCENT_ENCODING + '">$0</span>',
-                    result_type: CT.OTHER
-                }],
+                tmpl: [
+                    {v: '$0', e: 'span', class: 'mistake', title: Desc.PERCENT_ENCODING}
+                ],
                 for_book: BookType.BOTH,
                 where: Where.TRAN,
                 applicable_to: [CT.PLAIN_TEXT, CT.TO_URL_CHECK]
@@ -566,12 +549,6 @@
             var uncover_tmpl = function(items){
                 var res = [];
                 items.forEach(function(item){
-                    // oldstyle substitution declaration
-                    if ('value' in item && 'result_type' in item) {
-                        res.push(item);
-                        return;
-                    }
-
                     // CT.OTHER if the type is omited
                     var value_type = ('t' in item) ? item['t'] : CT.OTHER;
 
@@ -590,15 +567,16 @@
                     };
 
                     if ('e' in item) {
-                        var open_tag = '<' + item['e'] +
-                            (('class' in item) ? (' class="' + item['class'] + '"') : '') +
-                            (('title' in item) ? (' title="' + item['title'] + '"') : '') +
-                            (('src'   in item) ? (' src="'   + item['src']   + '"') : '') +
-                            '>';
+                        var open_tag = '<' + item['e'];
+                        for (var f in item) {
+                            if (f != 'v' && f != 'e' && f != 't')
+                                open_tag += ' ' + f + '="' + item[f] + '"';
+                        }
+                        open_tag += '>';
                         res.push({value: open_tag, result_type: CT.OTHER});
                         if ('v' in item)
                             add_value(item['v']);
-                        if (item['e'] == 'span' || item['e'] == 'div')
+                        if (item['e'] != 'img')
                             res.push({value: '</' + item['e'] + '>', result_type: CT.OTHER});
                     } else {
                         if ('v' in item)
