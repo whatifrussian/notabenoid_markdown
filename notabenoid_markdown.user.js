@@ -569,7 +569,7 @@
                 applicable_to: [CT.PLAIN_TEXT]
             }, {
                 // characters names: one or two word, then colon
-                re: /^\S+(?: \S+)?:/m,
+                re: /^\S+(?: \S+)?:(?=.)/m,
                 tmpl: [
                     {v: '$0', e: 'span', class: 'char_name'}
                 ],
