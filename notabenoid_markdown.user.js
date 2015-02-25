@@ -3,7 +3,7 @@
 // @description Markdown parser for notabenoid.org service
 // @author Alexander Turenko <totktonada.ru@gmail.com>
 // @license Public Domain
-// @version 1.10
+// @version 1.11
 // @include http://notabenoid.com*
 // @include /^http://notabenoid\.org/book/(41531|45955)/.+/
 // ==/UserScript==
@@ -553,7 +553,7 @@
                 re: /^(Title(?: text|-текст):)((?:.|\r|\n)*)$/,
                 tmpl: [
                     {v: '$1', e: 'span', class: 'char_name'},
-                    {v: '$2', e: 'span', class: 'title_text'}
+                    {v: '$2', e: 'span', class: 'title_text', t: CT.PLAIN_TEXT}
                 ],
                 for_book: BookType.XKCD,
                 where: Where.BOTH,
