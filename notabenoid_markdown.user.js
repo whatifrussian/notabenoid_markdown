@@ -3,7 +3,7 @@
 // @description Markdown parser for notabenoid.org service
 // @author Alexander Turenko <totktonada.ru@gmail.com>
 // @license Public Domain
-// @version 1.11
+// @version 1.12
 // @include http://notabenoid.com*
 // @include /^http://notabenoid\.org/book/(41531|45955)/.+/
 // ==/UserScript==
@@ -426,6 +426,22 @@
                         {v: ']('},
                         {v: '$2', t: CT.TO_URL_CHECK},
                         {v: ')'}
+                    ]}
+                ],
+                for_book: BookType.WHAT_IF,
+                where: Where.BOTH,
+                applicable_to: [CT.PLAIN_TEXT]
+            }, {
+                // md reference link description: [1]: url "title text"
+                re: /\[(\d{1,2})\]:(\s+)(\S+)(\s+)"((?:[^"]|\\")*[^\\])"/,
+                tmpl: [
+                    {v: '[$1]:$2'},
+                    {v: '$3', e: 'a', href: '$3', class: 'md_link_url', t: CT.URL_TO_CHECK},
+                    {v: '$4'},
+                    {e: 'span', class: 'md_link_title', v: [
+                        {v: '"'},
+                        {v: '$5', t: CT.PLAIN_TEXT},
+                        {v: '"'}
                     ]}
                 ],
                 for_book: BookType.WHAT_IF,
