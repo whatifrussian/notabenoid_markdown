@@ -775,7 +775,7 @@
             '}\n' +
             '.formula_source { color: #b8b8b8; }\n' +
             '.inline_formula_source { font-size: 0; }\n' +
-            '.formula_rendered text, inline_formula_rendered text {\n' +
+            '.formula_rendered text, .inline_formula_rendered text {\n' +
                 '-webkit-user-select: none;\n' +
                 '-moz-user-select: none;\n' +
                 'user-select: none;\n' +
