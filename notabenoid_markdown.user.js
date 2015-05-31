@@ -648,74 +648,78 @@
             }
         }
 
+        // via http://gabrieleromanato.name/jquery-detecting-new-elements-with-the-mutationobserver-object/
+        // and https://developer.mozilla.org/en-US/docs/Web/API/MutationObserver
+        function track_changes() {
+            var observer_o = new MutationObserver(function(mutations){
+                mutations.forEach(function(mutation){
+                    if (mutation.addedNodes == null)
+                        return;
+
+                    jQ(mutation.addedNodes).each(function(){
+                        if (jQTagName($(this)) == 'p' && $(this).hasClass('text')) {
+                            var p = $(this);
+                            p.parent().children('.text_rendered').remove();
+                            process(p);
+                        }
+                    });
+                });
+            });
+
+            var observer_t = new MutationObserver(function(mutations){
+                mutations.forEach(function(mutation){
+                    if (mutation.addedNodes == null)
+                        return;
+
+                    jQ(mutation.addedNodes).each(function(){
+                        if (jQTagName($(this)) == 'div') {
+                            $(this).children('p.text').each(function(){
+                                var p = $(this);
+                                process(p);
+                            });
+                        }
+                    });
+                });
+            });
+
+            var observer_new = new MutationObserver(function(mutations){
+                mutations.forEach(function(mutation){
+                    if (mutation.addedNodes == null)
+                        return;
+
+                    jQ(mutation.addedNodes).each(function(){
+                        var node = $(this);
+
+                        if (jQTagName(node) == 'tr') {
+                            // No guarantee that these nodes exists at this time,
+                            // but it works for me...
+                            var td_o_div = node.children('td.o').children('div');
+                            var td_t = node.children('td.t');
+                            observer_o.observe(td_o_div[0], {childList: true});
+                            observer_t.observe(td_t[0], {childList: true});
+                        }
+                    });
+                });
+            });
+
+            // observe exists nodes
+            jQ('td.o div').each(function(){
+                observer_o.observe($(this)[0], {childList: true});
+            });
+            jQ('td.t').each(function(){
+                observer_t.observe($(this)[0], {childList: true});
+            });
+
+            // register new nodes
+            observer_new.observe(jQ('table#Tr > tbody')[0], {childList: true});
+        }
+
         jQ('p.text').each(function(){
             var p = $(this);
             process(p);
         });
 
-        // via http://gabrieleromanato.name/jquery-detecting-new-elements-with-the-mutationobserver-object/
-        // and https://developer.mozilla.org/en-US/docs/Web/API/MutationObserver
-        var observer_o = new MutationObserver(function(mutations){
-            mutations.forEach(function(mutation){
-                if (mutation.addedNodes == null)
-                    return;
-
-                jQ(mutation.addedNodes).each(function(){
-                    if (jQTagName($(this)) == 'p' && $(this).hasClass('text')) {
-                        var p = $(this);
-                        p.parent().children('.text_rendered').remove();
-                        process(p);
-                    }
-                });
-            });
-        });
-
-        var observer_t = new MutationObserver(function(mutations){
-            mutations.forEach(function(mutation){
-                if (mutation.addedNodes == null)
-                    return;
-
-                jQ(mutation.addedNodes).each(function(){
-                    if (jQTagName($(this)) == 'div') {
-                        $(this).children('p.text').each(function(){
-                            var p = $(this);
-                            process(p);
-                        });
-                    }
-                });
-            });
-        });
-
-        var observer_new = new MutationObserver(function(mutations){
-            mutations.forEach(function(mutation){
-                if (mutation.addedNodes == null)
-                    return;
-
-                jQ(mutation.addedNodes).each(function(){
-                    var node = $(this);
-
-                    if (jQTagName(node) == 'tr') {
-                        // No guarantee that these nodes exists at this time,
-                        // but it works for me...
-                        var td_o_div = node.children('td.o').children('div');
-                        var td_t = node.children('td.t');
-                        observer_o.observe(td_o_div[0], {childList: true});
-                        observer_t.observe(td_t[0], {childList: true});
-                    }
-                });
-            });
-        });
-
-        // observe exists nodes
-        jQ('td.o div').each(function(){
-            observer_o.observe($(this)[0], {childList: true});
-        });
-        jQ('td.t').each(function(){
-            observer_t.observe($(this)[0], {childList: true});
-        });
-
-        // register new nodes
-        observer_new.observe(jQ('table#Tr > tbody')[0], {childList: true});
+        track_changes();
     }
 
     var loc = w.location.href;
