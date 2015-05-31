@@ -268,7 +268,7 @@
         }
 
         function process(p) {
-            p_rendered = jQ('<p/>', {class: 'text_rendered'});
+            div_rendered = jQ('<div/>', {class: 'text_rendered'});
 
             // via http://stackoverflow.com/a/3809435/1598057
             var letters_re = 'а-яА-Яa-zA-Z';
@@ -337,7 +337,7 @@
                 tmpl: [
                     {v: '$1', e: 'span', class: 'footnote_anchor'},
                     {t: CT.PLAIN_TEXT, v: function(matches){
-                        p_rendered.addClass('footnote_body');
+                        div_rendered.addClass('footnote_body');
                         return matches[2];
                     }}
                 ],
@@ -633,16 +633,16 @@
                 body += chunk.value;
             });
 
-            p_rendered.html(body);
-            p.after(p_rendered);
+            div_rendered.html(body);
+            p.after(div_rendered);
 
             // Process with MathJax if it already loaded.
             // If not, then it will processed when MathJax loaded.
             if (typeof MathJax != 'undefined') {
-                p_rendered.children('.formula_rendered').each(function(){
+                div_rendered.children('.formula_rendered').each(function(){
                     MathJax.Hub.Queue(["Typeset", MathJax.Hub, $(this)[0]]);
                 });
-                p_rendered.children('.inline_formula_rendered').each(function(){
+                div_rendered.children('.inline_formula_rendered').each(function(){
                     MathJax.Hub.Queue(["Typeset", MathJax.Hub, $(this)[0]]);
                 });
             }
@@ -663,7 +663,7 @@
                 jQ(mutation.addedNodes).each(function(){
                     if (jQTagName($(this)) == 'p' && $(this).hasClass('text')) {
                         var p = $(this);
-                        p.parent().children('p.text_rendered').remove();
+                        p.parent().children('.text_rendered').remove();
                         process(p);
                     }
                 });
