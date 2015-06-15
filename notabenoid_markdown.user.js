@@ -3,7 +3,7 @@
 // @description Markdown parser for notabenoid.org service
 // @author Alexander Turenko <totktonada.ru@gmail.com>
 // @license Public Domain
-// @version 1.13
+// @version 1.14
 // @include http://notabenoid.com*
 // @include /^http://notabenoid\.org/book/(41531|45955)/.+/
 // ==/UserScript==
@@ -268,7 +268,7 @@
         }
 
         function process(p) {
-            div_rendered = jQ('<div/>', {class: 'text_rendered'});
+            div_rendered = jQ('<div/>', {'class': 'text_rendered'});
 
             // via http://stackoverflow.com/a/3809435/1598057
             var letters_re = 'а-яА-Яa-zA-Z';
@@ -315,8 +315,8 @@
                 // displayed formula
                 re: /(!:^|[^\\])\${2}[^"]*(?:[^\\"])\${2}/,
                 tmpl: [
-                    {v: '$0', e: 'span', class: 'formula_source'},
-                    {v: '$0', e: 'span', class: 'formula_rendered', title: '$0'}
+                    {v: '$0', e: 'span', 'class': 'formula_source'},
+                    {v: '$0', e: 'span', 'class': 'formula_rendered', title: '$0'}
                 ],
                 for_book: BookType.WHAT_IF,
                 where: Where.BOTH,
@@ -325,8 +325,8 @@
                 // inline formula
                 re: /(!:^|[^\\])\$[^"]*(?:[^\\"])\$/,
                 tmpl: [
-                    {v: '$0', e: 'span', class: 'inline_formula_source'},
-                    {v: '$0', e: 'span', class: 'inline_formula_rendered', title: '$0'}
+                    {v: '$0', e: 'span', 'class': 'inline_formula_source'},
+                    {v: '$0', e: 'span', 'class': 'inline_formula_rendered', title: '$0'}
                 ],
                 for_book: BookType.WHAT_IF,
                 where: Where.BOTH,
@@ -335,7 +335,7 @@
                 // footnote fragment
                 re: /^(\[\^[0-9]{1,2}\]:)((?:.|\n|\r)*)$/,
                 tmpl: [
-                    {v: '$1', e: 'span', class: 'footnote_anchor'},
+                    {v: '$1', e: 'span', 'class': 'footnote_anchor'},
                     {t: CT.PLAIN_TEXT, v: function(matches){
                         div_rendered.addClass('footnote_body');
                         return matches[2];
@@ -360,9 +360,9 @@
                 // [labels] text [/labels]
                 re: /(\[labels\]<br>)((?:.|\n|\r)*)(\[\/labels\])/,
                 tmpl: [
-                    {v: '$1', e: 'span', class: 'labels_label'},
-                    {v: '$2', e: 'div', class: 'labels_block', t: CT.LABELS_BLOCK},
-                    {v: '$3', e: 'span', class: 'labels_label'}
+                    {v: '$1', e: 'span', 'class': 'labels_label'},
+                    {v: '$2', e: 'div', 'class': 'labels_block', t: CT.LABELS_BLOCK},
+                    {v: '$3', e: 'span', 'class': 'labels_label'}
                 ],
                 for_book: BookType.WHAT_IF,
                 where: Where.BOTH,
@@ -371,7 +371,7 @@
                 // embed image: render: ![](url)
                 re: /^render:\s+!\[\]\(([^\)]+)\)/m,
                 tmpl: [
-                    {v: '$0', e: 'span', class: 'rendered_md_src', t: CT.CAN_CONTAIN_URL},
+                    {v: '$0', e: 'span', 'class': 'rendered_md_src', t: CT.CAN_CONTAIN_URL},
                     {e: 'img', src: '$1'}
                 ],
                 for_book: BookType.BOTH,
@@ -382,10 +382,10 @@
                 re: /!\[\]\((\S+)(\s+)"((?:[^"]|\\")*[^\\])"\)/,
                 tmpl: [
                     {v: '![]'},
-                    {e: 'span', class: 'md_image_url', v: [
+                    {e: 'span', 'class': 'md_image_url', v: [
                         {v: '('},
                         {v: '$1$2', t: CT.TO_URL_CHECK},
-                        {e: 'span', class: 'md_image_title', v: [
+                        {e: 'span', 'class': 'md_image_title', v: [
                             {v: '"'},
                             {v: '$3', t: CT.PLAIN_TEXT},
                             {v: '"'}
@@ -400,12 +400,12 @@
                 // md link: [text](url "title")
                 re: /\[([^\]]*)\]\((\S+)(\s+)"((?:[^"]|\\")*[^\\])"\)/,
                 tmpl: [
-                    {e: 'span', class: 'md_link_url', v: [
+                    {e: 'span', 'class': 'md_link_url', v: [
                         {v: '['},
-                        {v: '$1', e: 'a', href: '$2', class: 'md_link_text', t: CT.PLAIN_TEXT},
+                        {v: '$1', e: 'a', href: '$2', 'class': 'md_link_text', t: CT.PLAIN_TEXT},
                         {v: ']('},
                         {v: '$2$3', t: CT.TO_URL_CHECK},
-                        {e: 'span', class: 'md_link_title', v: [
+                        {e: 'span', 'class': 'md_link_title', v: [
                             {v: '"'},
                             {v: '$4', t: CT.PLAIN_TEXT},
                             {v: '"'}
@@ -420,9 +420,9 @@
                 // md link: [text](url)
                 re: /\[([^\]]*)\]\((\S+)\)/,
                 tmpl: [
-                    {e: 'span', class: 'md_link_url', v: [
+                    {e: 'span', 'class': 'md_link_url', v: [
                         {v: '['},
-                        {v: '$1', e: 'a', href: '$2', class: 'md_link_text', t: CT.PLAIN_TEXT},
+                        {v: '$1', e: 'a', href: '$2', 'class': 'md_link_text', t: CT.PLAIN_TEXT},
                         {v: ']('},
                         {v: '$2', t: CT.TO_URL_CHECK},
                         {v: ')'}
@@ -436,9 +436,9 @@
                 re: /\[(\d{1,2})\]:(\s+)(\S+)(\s+)"((?:[^"]|\\")*[^\\])"/,
                 tmpl: [
                     {v: '[$1]:$2'},
-                    {v: '$3', e: 'a', href: '$3', class: 'md_link_url', t: CT.URL_TO_CHECK},
+                    {v: '$3', e: 'a', href: '$3', 'class': 'md_link_url', t: CT.URL_TO_CHECK},
                     {v: '$4'},
-                    {e: 'span', class: 'md_link_title', v: [
+                    {e: 'span', 'class': 'md_link_title', v: [
                         {v: '"'},
                         {v: '$5', t: CT.PLAIN_TEXT},
                         {v: '"'}
@@ -451,7 +451,7 @@
                 // mistake: 20 % → 20%
                 re: /\d(?: |&amp;thinsp;|&amp;nbsp;)%/,
                 tmpl: [
-                    {v: '$0', e: 'span', class: 'mistake', title: Desc.SPACE_PERCENT}
+                    {v: '$0', e: 'span', 'class': 'mistake', title: Desc.SPACE_PERCENT}
                 ],
                 for_book: BookType.BOTH,
                 where: Where.TRAN,
@@ -460,7 +460,7 @@
                 // special sequences: '&nbsp;' and '&thinsp;'
                 re: /&amp;(nbsp|thinsp);/,
                 tmpl: [
-                    {v: '&amp;$1;', e: 'span', class: 'special_seq'}
+                    {v: '&amp;$1;', e: 'span', 'class': 'special_seq'}
                 ],
                 for_book: BookType.WHAT_IF,
                 where: Where.BOTH,
@@ -469,7 +469,7 @@
                 // urls
                 re: new RegExp(url_re),
                 tmpl: [
-                    {v: '$0', e: 'a', href: '$0', class: 'any_link_url', t: CT.TO_URL_CHECK}
+                    {v: '$0', e: 'a', href: '$0', 'class': 'any_link_url', t: CT.TO_URL_CHECK}
                 ],
                 for_book: BookType.BOTH,
                 where: Where.BOTH,
@@ -478,7 +478,7 @@
                 // mistake: 'text.[^1]' or 'text[^1]?'
                 re: /[.,;:— ]\[\^[0-9]+\]|\[\^[0-9]+\][?!…]/,
                 tmpl: [
-                    {v: '$0', e: 'span', class: 'mistake', title: Desc.FOOTNOTE_PUNCTUM}
+                    {v: '$0', e: 'span', 'class': 'mistake', title: Desc.FOOTNOTE_PUNCTUM}
                 ],
                 for_book: BookType.WHAT_IF,
                 where: Where.TRAN,
@@ -487,7 +487,7 @@
                 // footnote reference
                 re: /\[\^[0-9]{1,2}\]/,
                 tmpl: [
-                    {v: '$0', e: 'sup', class: 'footnote_ref'}
+                    {v: '$0', e: 'sup', 'class': 'footnote_ref'}
                 ],
                 for_book: BookType.WHAT_IF,
                 where: Where.BOTH,
@@ -496,7 +496,7 @@
                 // mistake: ... → …
                 re: /\.{3}/,
                 tmpl: [
-                    {v: '$0', e: 'span', class: 'mistake', title: Desc.DOTS}
+                    {v: '$0', e: 'span', 'class': 'mistake', title: Desc.DOTS}
                 ],
                 for_book: BookType.BOTH,
                 where: Where.TRAN,
@@ -505,7 +505,7 @@
                 // mistake: {hyphen, en dash} → em dash
                 re: /\S [-–] \S|^[-–] \S/,
                 tmpl: [
-                    {v: '$0', e: 'span', class: 'mistake', title: Desc.NOT_EM_DASH}
+                    {v: '$0', e: 'span', 'class': 'mistake', title: Desc.NOT_EM_DASH}
                 ],
                 for_book: BookType.BOTH,
                 where: Where.TRAN,
@@ -514,7 +514,7 @@
                 // mistake: {hyphen, em dash} → en dash
                 re: /\d[-—]\d/,
                 tmpl: [
-                    {v: '$0', e: 'span', class: 'mistake', title: Desc.NOT_EN_DASH}
+                    {v: '$0', e: 'span', 'class': 'mistake', title: Desc.NOT_EN_DASH}
                 ],
                 for_book: BookType.BOTH,
                 where: Where.TRAN,
@@ -523,7 +523,7 @@
                 // mistake: computer style quotes
                 re: /'[^']+'|"[^"]+"/,
                 tmpl: [
-                    {v: '$0', e: 'span', class: 'mistake', title: Desc.QUOTES}
+                    {v: '$0', e: 'span', 'class': 'mistake', title: Desc.QUOTES}
                 ],
                 for_book: BookType.BOTH,
                 where: Where.TRAN,
@@ -532,7 +532,7 @@
                 // mistake: computer style apostrophe
                 re: /\S'\S/,
                 tmpl: [
-                    {v: '$0', e: 'span', class: 'mistake', title: Desc.APOSTROPHE}
+                    {v: '$0', e: 'span', 'class': 'mistake', title: Desc.APOSTROPHE}
                 ],
                 for_book: BookType.BOTH,
                 where: Where.TRAN,
@@ -541,7 +541,7 @@
                 // mistake: no space after abbreviation word
                 re: new RegExp('[' + letters_re + ']\\.[' + letters_re + ']'),
                 tmpl: [
-                    {v: '$0', e: 'span', class: 'mistake', title: Desc.ABBR_SPACE}
+                    {v: '$0', e: 'span', 'class': 'mistake', title: Desc.ABBR_SPACE}
                 ],
                 for_book: BookType.BOTH,
                 where: Where.TRAN,
@@ -568,8 +568,8 @@
                 // fragment with title text
                 re: /^(Title(?: text|-текст):)((?:.|\r|\n)*)$/,
                 tmpl: [
-                    {v: '$1', e: 'span', class: 'char_name'},
-                    {v: '$2', e: 'span', class: 'title_text', t: CT.PLAIN_TEXT}
+                    {v: '$1', e: 'span', 'class': 'char_name'},
+                    {v: '$2', e: 'span', 'class': 'title_text', t: CT.PLAIN_TEXT}
                 ],
                 for_book: BookType.XKCD,
                 where: Where.BOTH,
@@ -578,7 +578,7 @@
                 // transcript description: [Text text text.]
                 re: /^\[.*\](?:<br>)?$/m,
                 tmpl: [
-                    {v: '$0', e: 'span', class: 'transcript_description'}
+                    {v: '$0', e: 'span', 'class': 'transcript_description'}
                 ],
                 for_book: BookType.XKCD,
                 where: Where.BOTH,
@@ -587,7 +587,7 @@
                 // characters names: one or two word, then colon
                 re: /^\S+(?: \S+)?:(?=.)/m,
                 tmpl: [
-                    {v: '$0', e: 'span', class: 'char_name'}
+                    {v: '$0', e: 'span', 'class': 'char_name'}
                 ],
                 for_book: BookType.BOTH,
                 where: Where.BOTH,
@@ -597,7 +597,7 @@
                 // mistake: long number without &thinsp;
                 re: /\d{5,}/,
                 tmpl: [
-                    {v: '$0', e: 'span', class: 'mistake', title: Desc.SOLID_LONG_NUMBER}
+                    {v: '$0', e: 'span', 'class': 'mistake', title: Desc.SOLID_LONG_NUMBER}
                 ],
                 for_book: BookType.BOTH,
                 where: Where.TRAN,
@@ -606,7 +606,7 @@
                 // mistake: cyrillic letters percent encoded in URL
                 re: /(?:%D0%[9AB][0-9ABCDEF]|%D1%[8][0-9ABCDEF]|%D0%81|%D1%91)+/,
                 tmpl: [
-                    {v: '$0', e: 'span', class: 'mistake', title: Desc.PERCENT_ENCODING}
+                    {v: '$0', e: 'span', 'class': 'mistake', title: Desc.PERCENT_ENCODING}
                 ],
                 for_book: BookType.BOTH,
                 where: Where.TRAN,
