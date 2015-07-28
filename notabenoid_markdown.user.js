@@ -3,7 +3,7 @@
 // @description Markdown parser for notabenoid.org service
 // @author Alexander Turenko <totktonada.ru@gmail.com>
 // @license Public Domain
-// @version 1.14
+// @version 1.15
 // @include http://notabenoid.com*
 // @include /^http://notabenoid\.org/book/(41531|45955)/.+/
 // ==/UserScript==
@@ -379,7 +379,7 @@
                 applicable_to: [CT.PLAIN_TEXT]
             }, {
                 // md image: ![](url "title")
-                re: /!\[\]\((\S+)(\s+)"((?:[^"]|\\")*[^\\])"\)/,
+                re: /!\[\]\((\S+)(\s+)"((?:[^"]|\\")*[^\\]|)"\)/,
                 tmpl: [
                     {v: '![]'},
                     {e: 'span', 'class': 'md_image_url', v: [
@@ -398,7 +398,7 @@
                 applicable_to: [CT.PLAIN_TEXT]
             }, {
                 // md link: [text](url "title")
-                re: /\[([^\]]*)\]\((\S+)(\s+)"((?:[^"]|\\")*[^\\])"\)/,
+                re: /\[([^\]]*)\]\((\S+)(\s+)"((?:[^"]|\\")*[^\\]|)"\)/,
                 tmpl: [
                     {e: 'span', 'class': 'md_link_url', v: [
                         {v: '['},
@@ -433,7 +433,7 @@
                 applicable_to: [CT.PLAIN_TEXT]
             }, {
                 // md reference link description: [1]: url "title text"
-                re: /\[(\d{1,2})\]:(\s+)(\S+)(\s+)"((?:[^"]|\\")*[^\\])"/,
+                re: /\[(\d{1,2})\]:(\s+)(\S+)(\s+)"((?:[^"]|\\")*[^\\]|)"/,
                 tmpl: [
                     {v: '[$1]:$2'},
                     {v: '$3', e: 'a', href: '$3', 'class': 'md_link_url', t: CT.URL_TO_CHECK},
