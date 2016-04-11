@@ -1,13 +1,19 @@
 ## About
 
-This is userscript for support the process of translating [What If?](http://what-if.xkcd.com) articles and [xkcd](http://xkcd.com) webcomic to Russian. It parse and style text fragments on Notabenoid (the service for collective text tranlating) for convenient reading and editing.
+This is userscript for support the process of translating [What If?](http://what-if.xkcd.com) articles and [xkcd](http://xkcd.com) webcomic to Russian. It parses and styles text fragments on Notabenoid (the service for collective text tranlating) for convenient reading and editing.
 
 ## Installation
 
-1. Install the [Scriptish](https://addons.mozilla.org/ru/firefox/addon/scriptish/) addon for Firefox or [TamperMonkey](http://tampermonkey.net/#download) addon for Chrome/Chromium.
-2. Install [this userscript](https://github.com/whatifrussian/notabenoid_markdown/raw/master/notabenoid_markdown.user.js).
+1. Install one of userscripts' manager: [Greasemonkey](https://addons.mozilla.org/en-US/firefox/addon/greasemonkey/) addon for Firefox or [TamperMonkey](http://tampermonkey.net/#download) addon for Chrome/Chromium.
+2. Install [the userscript](https://github.com/whatifrussian/notabenoid_markdown/raw/master/notabenoid_markdown.user.js).
 
-For Chrome/Chromium you can skip first step, download script and install it from local file. But then you lose ability to easy updating the script.
+That's all.
+
+Notes:
+
+Installation of userscripts without an userscripts' manager seems to be completely disabled in recent Firefox/Chrome due to security reasons.
+
+Scriptish addon for Firefox seems to be outdated and doesn't work for me with recent Firefox (45.0.1) version.
 
 ## Syntax
 
