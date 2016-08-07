@@ -757,7 +757,8 @@
         if (loc.indexOf('/book/41531/') != 0 && loc.indexOf('/book/45955/') != 0)
             return;
 
-        if (loc.indexOf('/book/41531/') == 0)
+        // Enable MathJax everywhere except '.../ready' pages (for text copying).
+        if (loc.indexOf('/book/41531/') == 0 && loc.indexOf('/ready') == -1)
             addMathJax();
 
         addGlobalStyle(
