@@ -323,7 +323,7 @@
                 applicable_to: [CT.PLAIN_TEXT, CT.LABELS_BLOCK]
             }, {
                 // inline formula
-                re: /(!:^|[^\\])\$[^"]*(?:[^\\"])\$/,
+                re: /(!:^|[^\\])\$(?:[^"$]|\\\$)*(?:[^\\"])\$/,
                 tmpl: [
                     {v: '$0', e: 'span', 'class': 'inline_formula_source'},
                     {v: '$0', e: 'span', 'class': 'inline_formula_rendered', title: '$0'}
