@@ -3,7 +3,7 @@
 // @description Markdown parser for notabenoid.org service
 // @author Alexander Turenko <totktonada.ru@gmail.com>
 // @license Public Domain
-// @version 1.16
+// @version 1.17
 // @include http://notabenoid.com*
 // @include /^http://notabenoid\.org/book/(41531|45955)/.+/
 // ==/UserScript==
@@ -561,7 +561,7 @@
                 where: Where.TRAN,
                 applicable_to: [CT.PLAIN_TEXT, CT.LABELS_BLOCK]
             }, {
-                // **bold**
+                // **strong/bold**
                 re: /(!:^|[^\\])\*\*[^*]+\*\*/,
                 tmpl: [
                     {v: '$0', e: 'strong'}
@@ -570,7 +570,7 @@
                 where: Where.BOTH,
                 applicable_to: [CT.PLAIN_TEXT, CT.LABELS_BLOCK]
             }, {
-                // *italic*
+                // *emphasis/italic*
                 re: /(!:^|[^\\])\*[^*\n]+\*/,
                 tmpl: [
                     {v: '$0', e: 'em'}
