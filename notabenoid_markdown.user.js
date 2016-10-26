@@ -571,7 +571,7 @@
                 applicable_to: [CT.PLAIN_TEXT, CT.LABELS_BLOCK]
             }, {
                 // *italic*
-                re: /(!:^|[^\\])\*[^*]+\*/,
+                re: /(!:^|[^\\])\*[^*\n]+\*/,
                 tmpl: [
                     {v: '$0', e: 'em'}
                 ],
