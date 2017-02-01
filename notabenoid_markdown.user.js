@@ -3,7 +3,7 @@
 // @description Markdown parser for notabenoid.org service
 // @author Alexander Turenko <totktonada.ru@gmail.com>
 // @license Public Domain
-// @version 1.18
+// @version 1.19
 // @include http://notabenoid.com*
 // @include /^http://notabenoid\.org/book/(41531|45955)/.+/
 // ==/UserScript==
@@ -294,7 +294,8 @@
                 APOSTROPHE: "«Компьютерный» апостроф вместо специального символа (\\')",
                 ABBR_SPACE: "Отсутствует пробел после сокращения (правильно: «т. е.», «и т. д.»)",
                 SOLID_LONG_NUMBER: "Длинное число без разделителя разрядов (правильно: 123&amp;thinsp;000)",
-                PERCENT_ENCODING: "Нечитаемый для человека URL (percent encoding для кирилицы)"
+                PERCENT_ENCODING: "Нечитаемый для человека URL (percent encoding для кирилицы)",
+                HTML_SUB_SUPERSCRIPT: "Используйте синтаксис H_{2}O или E=mc^{2} вместо HTML"
             });
 
             // Chunk types
@@ -634,6 +635,33 @@
                 for_book: BookType.BOTH,
                 where: Where.TRAN,
                 applicable_to: [CT.PLAIN_TEXT, CT.TO_URL_CHECK]
+            }, {
+                // superscript
+                re: /\^\{[^}]+\}/,
+                tmpl: [
+                    {v: '$0', e: 'sup', 'class': 'superscript'}
+                ],
+                for_book: BookType.WHAT_IF,
+                where: Where.BOTH,
+                applicable_to: [CT.PLAIN_TEXT]
+            }, {
+                // subscript
+                re: /_\{[^}]+\}/,
+                tmpl: [
+                    {v: '$0', e: 'sub', 'class': 'subscript'}
+                ],
+                for_book: BookType.WHAT_IF,
+                where: Where.BOTH,
+                applicable_to: [CT.PLAIN_TEXT]
+            }, {
+                // mistake: using HTML for sub/superscript
+                re: /&lt;(su[bp])&gt;[^&]*&lt;\/\1&gt;/,
+                tmpl: [
+                    {v: '$0', e: 'span', 'class': 'mistake', title: Desc.HTML_SUB_SUPERSCRIPT}
+                ],
+                for_book: BookType.WHAT_IF,
+                where: Where.TRAN,
+                applicable_to: [CT.PLAIN_TEXT]
             }]);
 
             var chunks = [{
@@ -851,7 +879,10 @@
             '.mistake {\n' +
                 'border-bottom: 2px dotted red;\n' +
                 'background-color: #fee;\n' +
-            '}\n'
+            '}\n' +
+//            '.superscript { }\n' +
+//            '.subscript { }\n' +
+            ''
         );
         addJQuery(main);
     }
